@@ -6,7 +6,6 @@ class NetworkStateCreator:
 
     def __init__(self):
         self._MongoConnector = MongoClient('localhost',27017)
-        self._create_network_state_db()
 
     @staticmethod
     def _get_switches() -> list:
@@ -18,7 +17,7 @@ class NetworkStateCreator:
     def _get_ports(switch_dpid: str) -> dict:
         switch_details = requests.get(f"http://127.0.0.1:8080/v1.0/topology/switches/{switch_dpid}")
 
-        retrieved_switch_ports = switch_details.json()[0]
+        retrieved_switch_ports = switch_details.json()[0]['ports']
 
         for port in retrieved_switch_ports:
             del port['dpid'] # we don't need to include the dpid in each port desc, so remove it
@@ -60,7 +59,7 @@ class NetworkStateCreator:
 
     @staticmethod
     def _get_installed_flows(switch_dpid: str) -> dict:
-
+        print(switch_dpid)
         installed_flows_found = requests.get(f"http://127.0.0.1:8080/stats/flow/{switch_dpid}")
 
         return installed_flows_found.json()
@@ -72,7 +71,7 @@ class NetworkStateCreator:
 
         switch_collection.insert_one(switch_struct)
 
-    def _create_network_state_db(self) -> None:
+    def create_network_state_db(self) -> None:
         switches_found = self._get_switches()
 
         for switch in switches_found:
@@ -83,7 +82,7 @@ class NetworkStateCreator:
                 "ports" : self._get_ports(switch_hex_dpid),
                 "portMappings" : self._get_port_mappings(switch_hex_dpid),
                 "connectedHosts" : self._get_connected_hosts(switch_hex_dpid),
-                "installedFlows" : self._get_installed_flows(switch_hex_dpid)
+                "installedFlows" : self._get_installed_flows(switch)
             }
 
             self._put_to_db(switch_struct)
