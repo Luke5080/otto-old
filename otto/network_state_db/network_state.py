@@ -2,14 +2,13 @@ from otto.network_state_db.network_db_operator import NetworkDbOperator
 from otto.network_state_db.network_state_finder import NetworkStateFinder
 
 class NetworkState:
-    _network_db_operator : NetworkDbOperator
-    _nw_state_finder : NetworkStateFinder
+    _network_db_operator: NetworkDbOperator
+    _nw_state_finder: NetworkStateFinder
 
     def __init__(self):
         self.current_network_state = {}
         self._network_db_operator = NetworkDbOperator()
         self._nw_state_finder = NetworkStateFinder()
-
 
     def get_switch_details(self, switch_id: str) -> dict:
         switch_hex_dpid = f"000000000000000{switch_id}"  # need to write as 16 hex DPID for some RYU API calls
@@ -47,12 +46,17 @@ class NetworkState:
 
         self._network_db_operator.put_switch_to_db(switch_info)
 
-    def modify_switch_entry(self, switch_id:str, **kwargs) -> None:
+    def modify_switch_entry(self, switch_id: str, **kwargs) -> None:
         for key, value in kwargs.items():
             self.current_network_state[switch_id][key] = value
 
         self._network_db_operator.modify_switch_document(switch_id, **kwargs)
 
+    def __repr__(self):
+        ...
 
+    def __str__(self):
+        ...
 
-
+    def __getitem__(self, item):
+        ...

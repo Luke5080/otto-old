@@ -1,5 +1,6 @@
 from network_state_finder import NetworkStateFinder
 from network_state import NetworkState
+from deepdiff import DeepDiff
 
 class NetworkStateUpdater:
     _nw_state_finder: NetworkStateFinder
@@ -20,11 +21,11 @@ class NetworkStateUpdater:
 
         return found_nw_state
 
-
     def compare_nw_state(self):
 
         found_nw_state = self.get_nw_state()
 
-        if found_nw_state != self.nw_state.current_network_state:
-            pass
+        changes_found = DeepDiff(found_nw_state, self.nw_state.current_network_state)
+
+        # process changes
 
