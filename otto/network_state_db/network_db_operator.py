@@ -1,33 +1,56 @@
-"""
+from pymongo import MongoClient
+from exceptions import NetworkDatabaseException
+from pymongo.errors import PyMongoError
+
+class NetworkDbOperator:
+    _MongoConnector : MongoClient
+
+    def __init__(self):
+        self._MongoConnector = MongoClient('localhost', 27017)
+        self._network_state_db = self._MongoConnector["topology"]
+        self._switch_collection = self._MongoConnector["switches"]
+
     def put_switch_to_db(self, switch_struct: dict) -> None:
-        network_state_db = self._MongoConnector["topology"]
-
-        switch_collection = network_state_db["switches"]
-
         try:
-            switch_collection.insert_one(switch_struct)
+            self._switch_collection.insert_one(switch_struct)
+
+        except PyMongoError as e:
+            raise NetworkDatabaseException(
+                f"""
+                Exception occurred while attempting to put document into MongoDB.
+                Exception raised: {e}
+                """
+            )
+
         except Exception as e:
             raise NetworkDatabaseException(e)
 
-    def create_network_state(self, switches: list[int]) -> None:
-        for switch in switches:
-            switch_hex_dpid = f"000000000000000{switch}" # need to write as 16 hex DPID for some RYU API calls
 
-            switch_struct = {
-                "name": switch_hex_dpid,
-                "ports": self._get_ports(switch_hex_dpid),
-                "portMappings": self._get_port_mappings(switch_hex_dpid),
-                "connectedHosts": self._get_connected_hosts(switch_hex_dpid),
-                "installedFlows": self._get_installed_flows(str(switch))
-            }
+    def modify_switch_document(self, switch_dpid: str, **kwargs) -> None:
 
-            self._current_network_state[switch_hex_dpid] = switch_struct
+        match_exp = { 'name' : switch_dpid }
 
-    def create_network_state_db(self) -> None:
-        switches_found = self._get_switches()
+        try:
+            self._switch_collection.update_one(match_exp, kwargs)
+        except PyMongoError as e:
+            raise NetworkDatabaseException(
+                f"""
+                    Exception occurred while attempting to modify a document for {switch_dpid}.
+                    Exception raised: {e}
+                    """
+            )
 
-        self.create_network_state(switches_found)
+    def remove_switch_document(self, switch_dpid: str) -> None:
 
-        for switch_struct in self._current_network_state:
-            self.put_to_db(switch_struct)
-"""
+        try:
+            self._switch_collection.delete_one({"name" : switch_dpid})
+        except PyMongoError as e:
+            raise NetworkDatabaseException(
+                f"""
+                Exception occurred while attempting to remove a document in MongoDB.
+                Exception raised: {e}
+                """
+            )
+
+        except Exception as e:
+            raise NetworkDatabaseException(e)

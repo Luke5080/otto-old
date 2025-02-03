@@ -1,7 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
 import responses
-from pymongo.errors import PyMongoError
 from exceptions import (
     SwitchRetrievalException, PortRetrievalException,
     PortMappingException, FlowRetrievalException,
@@ -23,7 +21,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(SwitchRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_switches()
+            db_creator.get_switches()
 
     @responses.activate
     def test_get_switches__non_200(self):
@@ -37,7 +35,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(SwitchRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_switches()
+            db_creator.get_switches()
 
     @responses.activate
     def test_get_ports__exception(self):
@@ -52,7 +50,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(PortRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_ports(switch_dpid)
+            db_creator.get_ports(switch_dpid)
 
     @responses.activate
     def test_get_ports__non_200(self):
@@ -68,7 +66,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(PortRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_ports(switch_dpid)
+            db_creator.get_ports(switch_dpid)
 
     @responses.activate
     def test_get_ports__empty_response(self):
@@ -84,7 +82,7 @@ class TestNetworkStateCreator(unittest.TestCase):
 
         db_creator = NetworkStateFinder()
 
-        result = db_creator._get_ports(switch_dpid)
+        result = db_creator.get_ports(switch_dpid)
 
         self.assertEqual(result, {})
 
@@ -100,7 +98,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(PortMappingException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_port_mappings(switch_dpid)
+            db_creator.get_port_mappings(switch_dpid)
 
     @responses.activate
     def test_get_port_mappings__non_200(self):
@@ -116,7 +114,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(PortMappingException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_port_mappings(switch_dpid)
+            db_creator.get_port_mappings(switch_dpid)
 
     @responses.activate
     def test_get_ports_mappings__empty_response(self):
@@ -132,7 +130,7 @@ class TestNetworkStateCreator(unittest.TestCase):
 
         db_creator = NetworkStateFinder()
 
-        result = db_creator._get_port_mappings(switch_dpid)
+        result = db_creator.get_port_mappings(switch_dpid)
 
         self.assertEqual(result, {})
 
@@ -148,7 +146,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(HostRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_connected_hosts(switch_dpid)
+            db_creator.get_connected_hosts(switch_dpid)
 
     @responses.activate
     def test_get_connected_hosts__non_200(self):
@@ -164,7 +162,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(HostRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_connected_hosts(switch_dpid)
+            db_creator.get_connected_hosts(switch_dpid)
 
     @responses.activate
     def test_get_connected_hosts__empty_response(self):
@@ -180,7 +178,7 @@ class TestNetworkStateCreator(unittest.TestCase):
 
         db_creator = NetworkStateFinder()
 
-        result = db_creator._get_connected_hosts(switch_dpid)
+        result = db_creator.get_connected_hosts(switch_dpid)
 
         self.assertEqual(result, {})
 
@@ -197,7 +195,7 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(FlowRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_installed_flows(switch_dpid)
+            db_creator.get_installed_flows(switch_dpid)
 
     @responses.activate
     def test_get_installed_flows__non_200(self):
@@ -213,4 +211,4 @@ class TestNetworkStateCreator(unittest.TestCase):
         with self.assertRaises(FlowRetrievalException):
             db_creator = NetworkStateFinder()
 
-            db_creator._get_installed_flows(switch_dpid)
+            db_creator.get_installed_flows(switch_dpid)

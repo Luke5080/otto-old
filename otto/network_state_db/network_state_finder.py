@@ -9,7 +9,7 @@ from exceptions import (
 class NetworkStateFinder:
 
     @staticmethod
-    def _get_switches() -> list[int]:
+    def get_switches() -> list[int]:
         """
         Method to obtain a list of switches in the current network using
         the /stats/switches Ryu API. Returns a list of each switch's datapath
@@ -34,7 +34,7 @@ class NetworkStateFinder:
         return switch_list.json()
 
     @staticmethod
-    def _get_ports(switch_dpid: str) -> dict:
+    def get_ports(switch_dpid: str) -> dict:
         """
         Method to return a list of ports for a given switch
         using the /topology/switches/{dpid} Ryu API. Returns
@@ -68,7 +68,7 @@ class NetworkStateFinder:
         return {}
 
     @staticmethod
-    def _get_port_mappings(switch_dpid: str) -> dict:
+    def get_port_mappings(switch_dpid: str) -> dict:
         """
         Method which returns the port mappings for each port on a switch.
         Uses the /topology/links/{dpid} Ryu API and returns a dictionary
@@ -103,7 +103,7 @@ class NetworkStateFinder:
         return switch_port_mapping
 
     @staticmethod
-    def _get_connected_hosts(switch_dpid: str) -> dict:
+    def get_connected_hosts(switch_dpid: str) -> dict:
         try:
             hosts_discovered = requests.get(f"http://127.0.0.1:8080/v1.0/topology/hosts/{switch_dpid}")
             hosts_discovered.raise_for_status()
@@ -137,7 +137,7 @@ class NetworkStateFinder:
         return host_mappings
 
     @staticmethod
-    def _get_installed_flows(switch_dpid: str) -> dict:
+    def get_installed_flows(switch_dpid: str) -> dict:
         try:
             installed_flows_found = requests.get(f"http://127.0.0.1:8080/stats/flow/{switch_dpid}")
             installed_flows_found.raise_for_status()
