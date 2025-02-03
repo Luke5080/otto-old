@@ -1,5 +1,5 @@
-from network_db_operator import NetworkDbOperator
-from network_state_finder import NetworkStateFinder
+from otto.network_state_db.network_db_operator import NetworkDbOperator
+from otto.network_state_db.network_state_finder import NetworkStateFinder
 
 class NetworkState:
     _network_db_operator : NetworkDbOperator
@@ -33,7 +33,7 @@ class NetworkState:
             self.current_network_state[switch] = switch_info
 
         for _, switch_struct in self.current_network_state.items():
-            self._network_db_operator.put_switch_to_db(switch_struct)
+            self._network_db_operator.put_switch_to_db(switch_struct.copy())
 
     def delete_switch_nw_state(self, switch_dpid: str) -> None:
         del self.current_network_state[switch_dpid]

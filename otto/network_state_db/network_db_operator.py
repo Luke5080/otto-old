@@ -8,7 +8,7 @@ class NetworkDbOperator:
     def __init__(self):
         self._MongoConnector = MongoClient('localhost', 27017)
         self._network_state_db = self._MongoConnector["topology"]
-        self._switch_collection = self._MongoConnector["switches"]
+        self._switch_collection = self._network_state_db["switches"]
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
@@ -24,7 +24,6 @@ class NetworkDbOperator:
 
         except Exception as e:
             raise NetworkDatabaseException(e)
-
 
     def modify_switch_document(self, switch_dpid: str, **kwargs) -> None:
 
