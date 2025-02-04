@@ -1,6 +1,7 @@
 import time
 from threading import Thread
-from network_state import NetworkState
+from otto.network_state_db.network_state import NetworkState
+from deepdiff import DeepDiff
 
 class NetworkStateUpdater(Thread):
     _nw_state: NetworkState
@@ -12,9 +13,14 @@ class NetworkStateUpdater(Thread):
     def run(self):
 
         while True:
-            current_nw_state = [document for document in self._nw_state.get_network_state()]
-
-            if current_nw_state != self._nw_state.get_registered_state():
-                raise Exception
+            print("Starting..")
+            current_nw_state ={}
+            for document in self._nw_state.get_network_state():
+                current_nw_state[document["name"]] = document
+            excluded_keys = [
+            r"root\['[^']+'\]\['installedFlows'\]\['[^']+'\]\[\d+\]\['duration_nsec'\]",
+            r"root\['[^']+'\]\['installedFlows'\]\['[^']+'\]\[\d+\]\['duration_sec'\]"
+              ]
+            print(DeepDiff(self._nw_state.get_registered_state(),current_nw_state,exclude_regex_paths=excluded_keys))
 
             time.sleep(60)

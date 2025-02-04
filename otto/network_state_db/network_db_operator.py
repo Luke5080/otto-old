@@ -69,9 +69,9 @@ class NetworkDbOperator:
             raise SwitchDocumentNotFound
 
     def dump_network_db(self):
-        dumped_db = []
+        dumped_db = {}
         for collection in self._switch_collection.find():
             del collection["_id"]
-            dumped_db.append(collection)
+            dumped_db[collection["name"]] = collection
 
         return dumped_db
