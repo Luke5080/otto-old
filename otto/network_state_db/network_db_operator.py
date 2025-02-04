@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from exceptions import NetworkDatabaseException
+from exceptions import NetworkDatabaseException, SwitchDocumentNotFound
 from pymongo.errors import PyMongoError
 
 class NetworkDbOperator:
@@ -17,7 +17,7 @@ class NetworkDbOperator:
         except PyMongoError as e:
             raise NetworkDatabaseException(
                 f"""
-                Exception occurred while attempting to put document into MongoDB.
+                Exception occurred while attempting to put a document into MongoDB.
                 Exception raised: {e}
                 """
             )
@@ -53,3 +53,25 @@ class NetworkDbOperator:
 
         except Exception as e:
             raise NetworkDatabaseException(e)
+
+    def get_switch_document(self, switch_dpid: str):
+        try:
+            switch_entry = self._switch_collection.find_one({'name': switch_dpid})
+        except PyMongoError as e:
+            raise NetworkDatabaseException(
+                f"""
+                Exception occurred while attempting to retrieve a document in MongoDB.
+                Exception raised: {e}
+                """
+            )
+
+        if switch_entry is None:
+            raise SwitchDocumentNotFound
+
+    def dump_network_db(self):
+        dumped_db = []
+        for collection in self._switch_collection.find():
+            del collection["_id"]
+            dumped_db.append(collection)
+
+        return dumped_db

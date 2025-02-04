@@ -1,31 +1,20 @@
-from network_state_finder import NetworkStateFinder
+import time
+from threading import Thread
 from network_state import NetworkState
-from deepdiff import DeepDiff
 
-class NetworkStateUpdater:
-    _nw_state_finder: NetworkStateFinder
+class NetworkStateUpdater(Thread):
+    _nw_state: NetworkState
 
     def __init__(self):
-        self._nw_state_finder = NetworkStateFinder()
-        self.nw_state = NetworkState()
+        super().__init__()
+        self._nw_state = NetworkState()
 
-    def get_nw_state(self):
-        found_switches = self._nw_state_finder.get_switches()
+    def run(self):
 
-        found_nw_state = {}
+        while True:
+            current_nw_state = [document for document in self._nw_state.get_network_state()]
 
-        for switch in found_switches:
-            switch_details = self.nw_state.get_switch_details(str(switch))
+            if current_nw_state != self._nw_state.get_registered_state():
+                raise Exception
 
-            found_nw_state[switch] = switch_details
-
-        return found_nw_state
-
-    def compare_nw_state(self):
-
-        found_nw_state = self.get_nw_state()
-
-        changes_found = DeepDiff(found_nw_state, self.nw_state.current_network_state)
-
-        # process changes
-
+            time.sleep(60)

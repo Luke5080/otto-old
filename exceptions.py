@@ -15,3 +15,6 @@ class FlowRetrievalException(Exception):
 
 class NetworkDatabaseException(Exception):
     pass
+
+class SwitchDocumentNotFound(Exception):
+    pass

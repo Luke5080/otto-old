@@ -6,7 +6,6 @@ class NetworkState:
     _nw_state_finder: NetworkStateFinder
 
     def __init__(self):
-        self.current_network_state = {}
         self._network_db_operator = NetworkDbOperator()
         self._nw_state_finder = NetworkStateFinder()
 
@@ -23,34 +22,30 @@ class NetworkState:
 
         return switch_struct
 
-    def create_network_state(self):
+    def get_network_state(self) -> dict:
         found_switches = self._nw_state_finder.get_switches()
 
         for switch in found_switches:
             switch_info = self.get_switch_details(str(switch))
+            yield switch_info
 
-            self.current_network_state[switch] = switch_info
-
-        for _, switch_struct in self.current_network_state.items():
-            self._network_db_operator.put_switch_to_db(switch_struct.copy())
+    def create_network_state_db(self) -> None:
+        for found_switch in self.get_network_state():
+            self._network_db_operator.put_switch_to_db(found_switch)
 
     def delete_switch_nw_state(self, switch_dpid: str) -> None:
-        del self.current_network_state[switch_dpid]
-
         self._network_db_operator.remove_switch_document(switch_dpid)
 
-    def add_to_nw_state(self, switch_id: str) -> None:
-        switch_info = self.get_switch_details(switch_id)
-
-        self.current_network_state[switch_id] = switch_info
+    def add_to_nw_state(self, switch_dpid: str) -> None:
+        switch_info = self.get_switch_details(switch_dpid)
 
         self._network_db_operator.put_switch_to_db(switch_info)
 
-    def modify_switch_entry(self, switch_id: str, **kwargs) -> None:
-        for key, value in kwargs.items():
-            self.current_network_state[switch_id][key] = value
+    def modify_switch_entry(self, switch_dpid: str, **kwargs) -> None:
+        self._network_db_operator.modify_switch_document(switch_dpid, **kwargs)
 
-        self._network_db_operator.modify_switch_document(switch_id, **kwargs)
+    def get_registered_state(self) -> list[dict]:
+        return self._network_db_operator.dump_network_db()
 
     def __repr__(self):
         ...
@@ -58,5 +53,5 @@ class NetworkState:
     def __str__(self):
         ...
 
-    def __getitem__(self, item):
-        ...
+    def __getitem__(self, switch_dpid: str) -> dict:
+        return self._network_db_operator.get_switch_document(switch_dpid)
