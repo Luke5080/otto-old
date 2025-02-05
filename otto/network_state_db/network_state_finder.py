@@ -1,3 +1,4 @@
+import uuid
 import requests
 from requests.exceptions import HTTPError
 from exceptions import (
@@ -137,7 +138,7 @@ class NetworkStateFinder:
         return host_mappings
 
     @staticmethod
-    def get_installed_flows(switch_dpid: str) -> dict:
+    def get_installed_flows(switch_dpid: str, create_db=False, compare=False) -> dict:
         try:
             installed_flows_found = requests.get(f"http://127.0.0.1:8080/stats/flow/{switch_dpid}")
             installed_flows_found.raise_for_status()
@@ -154,4 +155,15 @@ class NetworkStateFinder:
         except Exception as e:
             raise FlowRetrievalException(e)
 
-        return installed_flows_found.json()
+        if create_db:
+           formatted_flows = {}
+
+           flows_found_dict = installed_flows_found.json()
+        
+           switch_key, = flows_found_dict
+        
+           for flow in flows_found_dict[switch_key]:
+               formatted_flows[str(uuid.uuid4())] = flow
+            
+           return formatted_flows
+

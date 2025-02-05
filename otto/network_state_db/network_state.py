@@ -8,19 +8,18 @@ class NetworkState:
     def __init__(self):
         self._network_db_operator = NetworkDbOperator()
         self._nw_state_finder = NetworkStateFinder()
+        self._flow_mapping = {}
 
     def get_switch_details(self, switch_id: str) -> dict:
-        switch_hex_dpid = f"000000000000000{switch_id}"  # need to write as 16 hex DPID for some RYU API calls
+        switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
 
         switch_struct = {
             "name": switch_hex_dpid,
             "ports": self._nw_state_finder.get_ports(switch_hex_dpid),
             "portMappings": self._nw_state_finder.get_port_mappings(switch_hex_dpid),
             "connectedHosts": self._nw_state_finder.get_connected_hosts(switch_hex_dpid),
-            "installedFlows": self._nw_state_finder.get_installed_flows(str(switch_id))
+            "installedFlows": self._nw_state_finder.get_installed_flows(switch_id)
         }
-
-        return switch_struct
 
     def get_network_state(self) -> dict:
         found_switches = self._nw_state_finder.get_switches()
