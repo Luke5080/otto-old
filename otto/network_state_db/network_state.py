@@ -21,6 +21,8 @@ class NetworkState:
             "installedFlows": self._nw_state_finder.get_installed_flows(switch_id)
         }
 
+        return switch_struct
+
     def get_network_state(self) -> dict:
         found_switches = self._nw_state_finder.get_switches()
 

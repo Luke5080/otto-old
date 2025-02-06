@@ -7,7 +7,7 @@ def main():
     ns.create_network_state_db()
 
     nsu = NetworkStateUpdater()
-    print("done")
+
     nsu.start()
 
 if __name__ == "__main__":

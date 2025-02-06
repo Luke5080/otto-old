@@ -4,19 +4,19 @@ from pymongo.errors import PyMongoError
 
 class NetworkDbOperator:
     _MongoConnector : MongoClient
-    _object_ids : dict
+    object_ids : dict
 
     def __init__(self):
         self._MongoConnector = MongoClient('localhost', 27017)
         self._network_state_db = self._MongoConnector["topology"]
         self._switch_collection = self._network_state_db["switches"]
-        self._object_ids = {}
+        self.object_ids = {}
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
 
-            self._object_ids[switch_struct["name"]] = inserted_doc.inserted_id
+            self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
         except PyMongoError as e:
             raise NetworkDatabaseException(
@@ -31,7 +31,7 @@ class NetworkDbOperator:
 
     def modify_switch_document(self, switch_dpid: str, **kwargs) -> None:
 
-        match_exp = { '_id' : self._object_ids[switch_dpid] }
+        match_exp = { '_id' : self.object_ids[switch_dpid] }
 
         try:
             self._switch_collection.update_one(match_exp, kwargs)
@@ -46,7 +46,7 @@ class NetworkDbOperator:
     def remove_switch_document(self, switch_dpid: str) -> None:
 
         try:
-            self._switch_collection.delete_one({"_id" : self._object_ids[switch_dpid]})
+            self._switch_collection.delete_one({"_id" : self.object_ids[switch_dpid]})
         except PyMongoError as e:
             raise NetworkDatabaseException(
                 f"""
@@ -58,9 +58,15 @@ class NetworkDbOperator:
         except Exception as e:
             raise NetworkDatabaseException(e)
 
-    def get_switch_document(self, switch_dpid: str):
+    def get_switch_document(self, switch_dpid: str, **kwargs):
         try:
-            switch_entry = self._switch_collection.find_one({"_id": self._object_ids[switch_dpid]})
+            match = {"_id" : self.object_ids[switch_dpid]}
+
+            if len(kwargs) > 0:
+                match = {**match, **kwargs}
+
+            switch_entry = self._switch_collection.find_one(match)
+
         except PyMongoError as e:
             raise NetworkDatabaseException(
                 f"""

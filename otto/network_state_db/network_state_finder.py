@@ -1,6 +1,8 @@
-import uuid
+import hashlib
+import json
 import requests
 from requests.exceptions import HTTPError
+from otto.network_state_db.network_db_operator import NetworkDbOperator
 from exceptions import (
     SwitchRetrievalException, PortRetrievalException,
     PortMappingException, FlowRetrievalException,
@@ -8,6 +10,10 @@ from exceptions import (
 )
 
 class NetworkStateFinder:
+    _db_operator: NetworkDbOperator
+
+    def __init__(self):
+        self._db_operator = NetworkDbOperator()
 
     @staticmethod
     def get_switches() -> list[int]:
@@ -137,8 +143,7 @@ class NetworkStateFinder:
 
         return host_mappings
 
-    @staticmethod
-    def get_installed_flows(switch_dpid: str, create_db=False, compare=False) -> dict:
+    def get_installed_flows(self, switch_dpid: str) -> dict:
         try:
             installed_flows_found = requests.get(f"http://127.0.0.1:8080/stats/flow/{switch_dpid}")
             installed_flows_found.raise_for_status()
@@ -155,15 +160,31 @@ class NetworkStateFinder:
         except Exception as e:
             raise FlowRetrievalException(e)
 
-        if create_db:
-           formatted_flows = {}
+        flows_found_dict = installed_flows_found.json()
 
-           flows_found_dict = installed_flows_found.json()
-        
-           switch_key, = flows_found_dict
-        
-           for flow in flows_found_dict[switch_key]:
-               formatted_flows[str(uuid.uuid4())] = flow
-            
-           return formatted_flows
+        switch_key, = flows_found_dict
+
+        formatted_flows = {}
+
+        for flow in flows_found_dict[switch_key]:
+
+            target_hash_fields = {
+                'priority' : flow['priority'],
+                'table_id' : flow['table_id'],
+                'match' : flow['match'],
+                'action' : flow['action'],
+                'dpid': switch_dpid
+            }
+
+            hash_str = json.dumps(target_hash_fields, sort_keys=True)
+
+            flow_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
+
+            del flow["duration_sec"]
+            del flow["duration_nsec"]
+
+            formatted_flows[flow_hash] = flow
+
+        return formatted_flows
+
 
