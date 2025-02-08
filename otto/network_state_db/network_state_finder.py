@@ -172,19 +172,21 @@ class NetworkStateFinder:
                 'priority' : flow['priority'],
                 'table_id' : flow['table_id'],
                 'match' : flow['match'],
-                'action' : flow['action'],
+                'actions' : flow['actions'],
                 'dpid': switch_dpid
             }
 
             hash_str = json.dumps(target_hash_fields, sort_keys=True)
 
-            flow_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
+            flow_hash = str(hashlib.md5(hash_str.encode('utf-8')).hexdigest())
 
             del flow["duration_sec"]
             del flow["duration_nsec"]
 
             formatted_flows[flow_hash] = flow
 
+        print(switch_dpid)
+        print(formatted_flows)
         return formatted_flows
 
 
