@@ -185,8 +185,6 @@ class NetworkStateFinder:
 
             formatted_flows[flow_hash] = flow
 
-        print(switch_dpid)
-        print(formatted_flows)
         return formatted_flows
 
 

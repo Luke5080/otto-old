@@ -4,6 +4,7 @@ from otto.network_state_db.network_state import NetworkState
 from otto.network_state_db.network_db_operator import NetworkDbOperator
 from deepdiff import DeepDiff
 from pymongo import UpdateOne
+import sys
 
 class NetworkStateUpdater(Thread):
     _nw_state : NetworkState
@@ -25,11 +26,11 @@ class NetworkStateUpdater(Thread):
 
             del changed_key[-1] # last trailing empty space in list
 
-            q_id = self._nw_db.object_ids[changed_key.pop(1)]
+            q_id = changed_key.pop(0)
 
             update = {"$set": {".".join(changed_key) : new_value['new_value']}}
 
-            query = {"_id" : q_id}
+            query = {"name" : q_id}
 
             updates.append(UpdateOne(query, update))
 
@@ -45,6 +46,8 @@ class NetworkStateUpdater(Thread):
             diff_found = DeepDiff(self._nw_state.get_registered_state(),current_nw_state)
 
             if len(diff_found) > 0:
+                print(diff_found)
                 self.update_value(diff_found['values_changed'])
+                print("done")
 
             time.sleep(60)
