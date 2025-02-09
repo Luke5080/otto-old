@@ -4,7 +4,7 @@ from otto.network_state_db.network_state import NetworkState
 from otto.network_state_db.network_db_operator import NetworkDbOperator
 from deepdiff import DeepDiff
 from pymongo import UpdateOne, DeleteOne, InsertOne
-import jmespath
+from glom import glom
 
 class NetworkStateUpdater(Thread):
     _nw_state : NetworkState
@@ -46,7 +46,7 @@ class NetworkStateUpdater(Thread):
 
             del added_item[-1]
 
-            if len(added_item) == 0:
+            if len(added_item) == 1:
                 updates.append(InsertOne(nw_state[added_item[0]]))
 
             else:
@@ -57,7 +57,7 @@ class NetworkStateUpdater(Thread):
 
                 query = {"_id": self._nw_db.object_ids[switch_dpid]}
 
-                update = {"$set": {".".join(added_item) : jmespath.search(full_update, nw_state)}}
+                update = {"$set": {".".join(added_item) : glom(nw_state, full_update)}}
 
                 updates.append(UpdateOne(query, update))
 
@@ -77,14 +77,14 @@ class NetworkStateUpdater(Thread):
 
             del added_item[-1]
 
-            if len(added_item) == 0:
+            if len(added_item) == 1:
                 query = {"_id" : self._nw_db.object_ids[added_item[0]]}
 
                 updates.append(DeleteOne(query))
 
             else:
                 query = {"_id": self._nw_db.object_ids[added_item.pop(0)]}
-
+                print(".".join(added_item))
                 update = {"$unset": {".".join(added_item): ""}}
 
                 updates.append(UpdateOne(query, update))
@@ -102,6 +102,7 @@ class NetworkStateUpdater(Thread):
             diff_found = DeepDiff(self._nw_state.get_registered_state(),current_nw_state)
 
             if len(diff_found) > 0:
+                print(diff_found)
                 if "values_changed" in diff_found:
                     self._update_value(diff_found['values_changed'])
 

@@ -10,18 +10,20 @@ class NetworkDbOperator:
 
     @staticmethod
     def get_instance():
-        if NetworkDbOperator.__instance is not None:
+        if NetworkDbOperator.__instance is None:
             NetworkDbOperator()
         return NetworkDbOperator.__instance
 
+
+
     def __init__(self):
         if NetworkDbOperator.__instance is None:
-            self._MongoConnector = MongoClient('localhost', 27017)
-            self._network_state_db = self._MongoConnector["topology"]
-            self._switch_collection = self._network_state_db["switches"]
-            self.object_ids = {}
+           self._MongoConnector = MongoClient('localhost', 27017)
+           self._network_state_db = self._MongoConnector["topology"]
+           self._switch_collection = self._network_state_db["switches"]
+           self.object_ids = {}
 
-            NetworkDbOperator.__instance = self
+           NetworkDbOperator.__instance = self
 
         else:
             raise MultipleNetworkDbOperators(
@@ -31,7 +33,7 @@ class NetworkDbOperator:
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
-
+            print(inserted_doc.inserted_id)
             self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
         except PyMongoError as e:

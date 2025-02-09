@@ -1,5 +1,6 @@
 from otto.network_state_db.network_db_operator import NetworkDbOperator
 from otto.network_state_db.network_state_finder import NetworkStateFinder
+from pymongo import InsertOne
 
 class NetworkState:
     _network_db_operator: NetworkDbOperator
