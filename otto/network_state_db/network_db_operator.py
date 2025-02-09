@@ -78,6 +78,9 @@ class NetworkDbOperator:
         if switch_entry is None:
             raise SwitchDocumentNotFound
 
+    def bulk_update(self, changes: list):
+        self._switch_collection.bulk_write(changes)
+
     def dump_network_db(self):
         dumped_db = {}
         for collection in self._switch_collection.find():
