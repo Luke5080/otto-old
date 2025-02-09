@@ -18,3 +18,9 @@ class NetworkDatabaseException(Exception):
 
 class SwitchDocumentNotFound(Exception):
     pass
+
+class MultipleNetworkDbOperators(Exception):
+    pass
+
+class MultipleNetworkStateInstances(Exception):
+    pass

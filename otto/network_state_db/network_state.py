@@ -6,7 +6,7 @@ class NetworkState:
     _nw_state_finder: NetworkStateFinder
 
     def __init__(self):
-        self._network_db_operator = NetworkDbOperator()
+        self._network_db_operator = NetworkDbOperator.get_instance()
         self._nw_state_finder = NetworkStateFinder()
         self._flow_mapping = {}
 

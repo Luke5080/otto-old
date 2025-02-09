@@ -10,11 +10,6 @@ from exceptions import (
 )
 
 class NetworkStateFinder:
-    _db_operator: NetworkDbOperator
-
-    def __init__(self):
-        self._db_operator = NetworkDbOperator()
-
     @staticmethod
     def get_switches() -> list[int]:
         """
@@ -143,7 +138,8 @@ class NetworkStateFinder:
 
         return host_mappings
 
-    def get_installed_flows(self, switch_dpid: str) -> dict:
+    @staticmethod
+    def get_installed_flows(switch_dpid: str) -> dict:
         try:
             installed_flows_found = requests.get(f"http://127.0.0.1:8080/stats/flow/{switch_dpid}")
             installed_flows_found.raise_for_status()

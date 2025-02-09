@@ -1,16 +1,32 @@
 from pymongo import MongoClient
-from exceptions import NetworkDatabaseException, SwitchDocumentNotFound
+from exceptions import NetworkDatabaseException, SwitchDocumentNotFound, MultipleNetworkDbOperators
 from pymongo.errors import PyMongoError
 
 class NetworkDbOperator:
     _MongoConnector : MongoClient
     object_ids : dict
 
+    __instance = None
+
+    @staticmethod
+    def get_instance():
+        if NetworkDbOperator.__instance is not None:
+            NetworkDbOperator()
+        return NetworkDbOperator.__instance
+
     def __init__(self):
-        self._MongoConnector = MongoClient('localhost', 27017)
-        self._network_state_db = self._MongoConnector["topology"]
-        self._switch_collection = self._network_state_db["switches"]
-        self.object_ids = {}
+        if NetworkDbOperator.__instance is None:
+            self._MongoConnector = MongoClient('localhost', 27017)
+            self._network_state_db = self._MongoConnector["topology"]
+            self._switch_collection = self._network_state_db["switches"]
+            self.object_ids = {}
+
+            NetworkDbOperator.__instance = self
+
+        else:
+            raise MultipleNetworkDbOperators(
+                f"An instance of NetworkDbOperator already exists at {NetworkDbOperator.__instance}"
+                )
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
@@ -29,12 +45,12 @@ class NetworkDbOperator:
         except Exception as e:
             raise NetworkDatabaseException(e)
 
-    def modify_switch_document(self, switch_dpid: str, **kwargs) -> None:
+    def modify_switch_document(self, switch_dpid: str, change:dict) -> None:
 
         match_exp = { '_id' : self.object_ids[switch_dpid] }
 
         try:
-            self._switch_collection.update_one(match_exp, kwargs)
+            self._switch_collection.update_one(match_exp, change)
         except PyMongoError as e:
             raise NetworkDatabaseException(
                 f"""
