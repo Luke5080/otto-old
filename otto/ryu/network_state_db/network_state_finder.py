@@ -1,7 +1,7 @@
 import hashlib
 import json
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, ConnectionError
 from exceptions import (
     SwitchRetrievalException, PortRetrievalException,
     PortMappingException, FlowRetrievalException,
@@ -23,6 +23,14 @@ class NetworkStateFinder:
             raise SwitchRetrievalException(
                 f"""
                 Error while contacting API /stats/switches.
+                Exception raised: {e}
+                """
+            )
+
+        except ConnectionError as e:
+            raise SwitchRetrievalException(
+                f"""
+                Error while contacting API /stats/switches.
                 Please ensure you run Ryu with the following applications:\n
                 ryu-manager ryu.app.ofctl_rest ryu.app.rest_topology --observe-links
                 Exception raised: {e}
@@ -35,7 +43,7 @@ class NetworkStateFinder:
         return switch_list.json()
 
     @staticmethod
-    def get_ports(switch_dpid: str) -> dict:
+    def get_ports(switch_dpid: str) -> list:
         """
         Method to return a list of ports for a given switch
         using the /topology/switches/{dpid} Ryu API. Returns
@@ -46,6 +54,14 @@ class NetworkStateFinder:
             switch_details = requests.get(f"http://127.0.0.1:8080/v1.0/topology/switches/{switch_dpid}")
             switch_details.raise_for_status()
         except HTTPError as e:
+            raise PortRetrievalException(
+                f"""
+                Error while contacting API /V1.0/topology/switches.
+                Exception raised: {e}
+                """
+            )
+
+        except ConnectionError as e:
             raise PortRetrievalException(
                 f"""
                 Error while contacting API /V1.0/topology/switches.
@@ -66,7 +82,7 @@ class NetworkStateFinder:
 
             return retrieved_switch_ports
 
-        return {}
+        return []
 
     @staticmethod
     def get_port_mappings(switch_dpid: str) -> dict:
@@ -94,8 +110,10 @@ class NetworkStateFinder:
 
         switch_port_mapping = {}
 
-        if len(links_found.json()) > 0:
-            for port_mapping in links_found.json():
+        links_found = links_found.json()
+
+        if len(links_found) > 0:
+            for port_mapping in links_found:
                 source_port = port_mapping['src']['name']
                 destination = port_mapping['dst']['name']
 
@@ -123,8 +141,10 @@ class NetworkStateFinder:
 
         host_mappings = {}
 
-        if len(hosts_discovered.json()) > 0:
-            for connected_host in hosts_discovered.json():
+        hosts_discovered = hosts_discovered.json()
+
+        if len(hosts_discovered) > 0:
+            for connected_host in hosts_discovered:
                 connected_port = connected_host['port']['name']
 
                 host_details  = {
@@ -157,29 +177,28 @@ class NetworkStateFinder:
 
         flows_found_dict = installed_flows_found.json()
 
-        switch_key, = flows_found_dict
-
         formatted_flows = {}
 
-        for flow in flows_found_dict[switch_key]:
+        if len(flows_found_dict) > 0:
+            switch_key, = flows_found_dict
 
-            target_hash_fields = {
-                'priority' : flow['priority'],
-                'table_id' : flow['table_id'],
-                'match' : flow['match'],
-                'actions' : flow['actions'],
-                'dpid': switch_dpid
-            }
+            for flow in flows_found_dict[switch_key]:
 
-            hash_str = json.dumps(target_hash_fields, sort_keys=True)
+                target_hash_fields = {
+                    'priority' : flow['priority'],
+                    'table_id' : flow['table_id'],
+                    'match' : flow['match'],
+                    'actions' : flow['actions'],
+                    'dpid': switch_dpid
+                }
 
-            flow_hash = str(hashlib.md5(hash_str.encode('utf-8')).hexdigest())
+                hash_str = json.dumps(target_hash_fields, sort_keys=True)
 
-            del flow["duration_sec"]
-            del flow["duration_nsec"]
+                flow_hash = str(hashlib.md5(hash_str.encode('utf-8')).hexdigest())
 
-            formatted_flows[flow_hash] = flow
+                del flow["duration_sec"]
+                del flow["duration_nsec"]
+
+                formatted_flows[flow_hash] = flow
 
         return formatted_flows
-
-
