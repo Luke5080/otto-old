@@ -1,5 +1,5 @@
-from otto.network_state_db.network_state import NetworkState
-from otto.network_state_db.network_state_updater import NetworkStateUpdater
+from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
 
 def main():
     ns = NetworkState()

@@ -14,8 +14,6 @@ class NetworkDbOperator:
             NetworkDbOperator()
         return NetworkDbOperator.__instance
 
-
-
     def __init__(self):
         if NetworkDbOperator.__instance is None:
            self._MongoConnector = MongoClient('localhost', 27017)
@@ -33,7 +31,7 @@ class NetworkDbOperator:
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
-            print(inserted_doc.inserted_id)
+
             self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
         except PyMongoError as e:

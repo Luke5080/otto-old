@@ -1,7 +1,7 @@
 import time
 from threading import Thread
-from otto.network_state_db.network_state import NetworkState
-from otto.network_state_db.network_db_operator import NetworkDbOperator
+from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from deepdiff import DeepDiff
 from pymongo import UpdateOne, DeleteOne, InsertOne
 from glom import glom
@@ -63,10 +63,9 @@ class NetworkStateUpdater(Thread):
 
         self._nw_db.bulk_update(updates)
 
-
     def _remove_value(self, added_value: dict, nw_state: dict) -> None:
         """
-        either deletes an entire switch document OR deletes a  key in a switch document
+        either deletes an entire switch document OR deletes a key in a switch document
         """
 
         updates = []
@@ -84,7 +83,7 @@ class NetworkStateUpdater(Thread):
 
             else:
                 query = {"_id": self._nw_db.object_ids[added_item.pop(0)]}
-                print(".".join(added_item))
+
                 update = {"$unset": {".".join(added_item): ""}}
 
                 updates.append(UpdateOne(query, update))

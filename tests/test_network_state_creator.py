@@ -3,9 +3,9 @@ import responses
 from exceptions import (
     SwitchRetrievalException, PortRetrievalException,
     PortMappingException, FlowRetrievalException,
-    HostRetrievalException, NetworkDatabaseException
+    HostRetrievalException
 )
-from otto.network_state_db.network_state_finder import NetworkStateFinder
+from otto.ryu.network_state_db import NetworkStateFinder
 
 
 class TestNetworkStateCreator(unittest.TestCase):

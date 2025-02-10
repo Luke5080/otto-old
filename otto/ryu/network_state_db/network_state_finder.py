@@ -2,7 +2,6 @@ import hashlib
 import json
 import requests
 from requests.exceptions import HTTPError
-from otto.network_state_db.network_db_operator import NetworkDbOperator
 from exceptions import (
     SwitchRetrievalException, PortRetrievalException,
     PortMappingException, FlowRetrievalException,
