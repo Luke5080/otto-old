@@ -34,6 +34,8 @@ class NetworkDbOperator:
 
             self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
+            return inserted_doc.inserted_id # FIXME: unit testing purposes
+
         except PyMongoError as e:
             raise NetworkDatabaseException(
                 f"""
@@ -63,6 +65,8 @@ class NetworkDbOperator:
 
         try:
             self._switch_collection.delete_one({"_id" : self.object_ids[switch_dpid]})
+            del self.object_ids[switch_dpid]
+
         except PyMongoError as e:
             raise NetworkDatabaseException(
                 f"""
@@ -96,6 +100,12 @@ class NetworkDbOperator:
 
     def bulk_update(self, changes: list):
         self._switch_collection.bulk_write(changes)
+
+    def dump_ids(self):
+        return {collection['name'] : collection["_id"] for collection in self._switch_collection.find()}
+
+    def drop_database(self):
+        self._MongoConnector.drop_database('topology')
 
     def dump_network_db(self):
         dumped_db = {}

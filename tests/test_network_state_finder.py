@@ -10,7 +10,7 @@ from exceptions import (
     HostRetrievalException
 )
 
-class TestNetworkStateCreator(unittest.TestCase):
+class TestNetworkStateFinder(unittest.TestCase):
 
     @responses.activate
     def test_get_switches__requests_exceptions(self):
@@ -117,6 +117,39 @@ class TestNetworkStateCreator(unittest.TestCase):
 
     @responses.activate
     def test_get_ports__successful_response(self):
+        switch_dpid = "0000000000000001"
+
+        responses.add(
+            responses.GET,
+            f'http://127.0.0.1:8080/v1.0/topology/switches/{switch_dpid}',
+            json=[
+                {
+                    "dpid": "0000000000000001",
+                    "ports": [
+                        {
+                            "dpid": "0000000000000001",
+                            "port_no": "00000001",
+                            "hw_addr": "ae:b9:44:bc:5d:27",
+                            "name": "s1-eth1"
+                        },
+                        {
+                            "dpid": "0000000000000001",
+                            "port_no": "00000002",
+                            "hw_addr": "2e:2c:a8:da:77:10",
+                            "name": "s1-eth2"
+                        },
+                        {
+                            "dpid": "0000000000000001",
+                            "port_no": "00000003",
+                            "hw_addr": "16:20:f6:bd:52:24",
+                            "name": "s1-eth3"
+                        }
+                    ]
+                }
+            ],
+            status=200
+        )
+
         expected_result = [
           {
             "port_no": "00000001",
@@ -135,38 +168,6 @@ class TestNetworkStateCreator(unittest.TestCase):
           }
         ]
 
-        switch_dpid = "0000000000000001"
-        responses.add(
-            responses.GET,
-            f'http://127.0.0.1:8080/v1.0/topology/switches/{switch_dpid}',
-            json = [
-              {
-                "dpid": "0000000000000001",
-                "ports": [
-                  {
-                    "dpid": "0000000000000001",
-                    "port_no": "00000001",
-                    "hw_addr": "ae:b9:44:bc:5d:27",
-                    "name": "s1-eth1"
-                  },
-                  {
-                    "dpid": "0000000000000001",
-                    "port_no": "00000002",
-                    "hw_addr": "2e:2c:a8:da:77:10",
-                    "name": "s1-eth2"
-                  },
-                  {
-                    "dpid": "0000000000000001",
-                    "port_no": "00000003",
-                    "hw_addr": "16:20:f6:bd:52:24",
-                    "name": "s1-eth3"
-                  }
-                ]
-              }
-            ],
-            status=200
-        )
-
         db_creator = NetworkStateFinder()
 
         result = db_creator.get_ports(switch_dpid)
@@ -176,6 +177,7 @@ class TestNetworkStateCreator(unittest.TestCase):
     @responses.activate
     def test_get_port_mappings__exception(self):
         switch_dpid = "0000000000000001"
+
         responses.add(
             responses.GET,
             f'http://127.0.0.1:8080/v1.0/topology/links/{switch_dpid}',
@@ -407,7 +409,6 @@ class TestNetworkStateCreator(unittest.TestCase):
 
     @responses.activate
     def test_get_installed_flows__successful_response(self):
-
         target_hash_fields = {
             'priority': 65535,
             'table_id': 0,
