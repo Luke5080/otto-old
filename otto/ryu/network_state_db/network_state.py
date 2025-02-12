@@ -1,6 +1,7 @@
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
+
 class NetworkState:
     _network_db_operator: NetworkDbOperator
     _nw_state_finder: NetworkStateFinder

@@ -8,6 +8,7 @@ from exceptions import (
     HostRetrievalException
 )
 
+
 class NetworkStateFinder:
     @staticmethod
     def get_switches() -> list[int]:
@@ -78,7 +79,7 @@ class NetworkStateFinder:
             retrieved_switch_ports = switch_details.json()[0]['ports']
 
             for port in retrieved_switch_ports:
-                del port['dpid'] # we don't need to include the dpid in each port desc, so remove it
+                del port['dpid']  # we don't need to include the dpid in each port desc, so remove it
 
             return retrieved_switch_ports
 
@@ -147,10 +148,10 @@ class NetworkStateFinder:
             for connected_host in hosts_discovered:
                 connected_port = connected_host['port']['name']
 
-                host_details  = {
-                    'mac' : connected_host['mac'],
-                    'ipv4' : connected_host['ipv4'],
-                    'ipv6' : connected_host['ipv6']
+                host_details = {
+                    'mac': connected_host['mac'],
+                    'ipv4': connected_host['ipv4'],
+                    'ipv6': connected_host['ipv6']
                 }
 
                 host_mappings[connected_port] = host_details
@@ -183,12 +184,11 @@ class NetworkStateFinder:
             switch_key, = flows_found_dict
 
             for flow in flows_found_dict[switch_key]:
-
                 target_hash_fields = {
-                    'priority' : flow['priority'],
-                    'table_id' : flow['table_id'],
-                    'match' : flow['match'],
-                    'actions' : flow['actions'],
+                    'priority': flow['priority'],
+                    'table_id': flow['table_id'],
+                    'match': flow['match'],
+                    'actions': flow['actions'],
                     'dpid': switch_dpid
                 }
 

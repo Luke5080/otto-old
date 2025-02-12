@@ -2,9 +2,10 @@ from pymongo import MongoClient
 from exceptions import NetworkDatabaseException, SwitchDocumentNotFound, MultipleNetworkDbOperators
 from pymongo.errors import PyMongoError
 
+
 class NetworkDbOperator:
-    _MongoConnector : MongoClient
-    object_ids : dict
+    _MongoConnector: MongoClient
+    object_ids: dict
 
     __instance = None
 
@@ -16,17 +17,17 @@ class NetworkDbOperator:
 
     def __init__(self):
         if NetworkDbOperator.__instance is None:
-           self._MongoConnector = MongoClient('localhost', 27017)
-           self._network_state_db = self._MongoConnector["topology"]
-           self._switch_collection = self._network_state_db["switches"]
-           self.object_ids = {}
+            self._MongoConnector = MongoClient('localhost', 27017)
+            self._network_state_db = self._MongoConnector["topology"]
+            self._switch_collection = self._network_state_db["switches"]
+            self.object_ids = {}
 
-           NetworkDbOperator.__instance = self
+            NetworkDbOperator.__instance = self
 
         else:
             raise MultipleNetworkDbOperators(
                 f"An instance of NetworkDbOperator already exists at {NetworkDbOperator.__instance}"
-                )
+            )
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
@@ -34,7 +35,7 @@ class NetworkDbOperator:
 
             self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
-            return inserted_doc.inserted_id # FIXME: unit testing purposes
+            return inserted_doc.inserted_id  # FIXME: unit testing purposes
 
         except PyMongoError as e:
             raise NetworkDatabaseException(
@@ -47,9 +48,9 @@ class NetworkDbOperator:
         except Exception as e:
             raise NetworkDatabaseException(e)
 
-    def modify_switch_document(self, switch_dpid: str, change:dict) -> None:
+    def modify_switch_document(self, switch_dpid: str, change: dict) -> None:
 
-        match_exp = { '_id' : self.object_ids[switch_dpid] }
+        match_exp = {'_id': self.object_ids[switch_dpid]}
 
         try:
             self._switch_collection.update_one(match_exp, change)
@@ -64,7 +65,7 @@ class NetworkDbOperator:
     def remove_switch_document(self, switch_dpid: str) -> None:
 
         try:
-            self._switch_collection.delete_one({"_id" : self.object_ids[switch_dpid]})
+            self._switch_collection.delete_one({"_id": self.object_ids[switch_dpid]})
             del self.object_ids[switch_dpid]
 
         except PyMongoError as e:
@@ -80,7 +81,7 @@ class NetworkDbOperator:
 
     def get_switch_document(self, switch_dpid: str, **kwargs):
         try:
-            match = {"_id" : self.object_ids[switch_dpid]}
+            match = {"_id": self.object_ids[switch_dpid]}
 
             if len(kwargs) > 0:
                 match = {**match, **kwargs}
@@ -102,7 +103,7 @@ class NetworkDbOperator:
         self._switch_collection.bulk_write(changes)
 
     def dump_ids(self):
-        return {collection['name'] : collection["_id"] for collection in self._switch_collection.find()}
+        return {collection['name']: collection["_id"] for collection in self._switch_collection.find()}
 
     def drop_database(self):
         self._MongoConnector.drop_database('topology')
