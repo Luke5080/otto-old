@@ -5,12 +5,18 @@ from langchain.prompts import PromptTemplate
 from otto.ryu.intent_engine.agent_base import AgentBase
 from otto.ryu.intent_engine.agent_prompts import AgentPrompts
 import requests
-
+from otto.ryu.network_state_db.network_state import NetworkState
 
 class ModifyNetworkAgent(AgentBase):
     _prompt_holder = AgentPrompts()
 
     agent_prompt: str = _prompt_holder.modify_network_agent_prompt
+
+    @staticmethod
+    def network_state():
+        ns = NetworkState()
+
+        return ns.get_registered_state()
 
     @staticmethod
     def add_rule(config) -> int:
@@ -54,6 +60,13 @@ class ModifyNetworkAgent(AgentBase):
         return resp.status_code
 
     @tool
+    def get_network_state(self):
+        """
+        Get the current entire state of the network
+        """
+        return self.network_state()
+
+    @tool
     def add_rule_to_switch(self, config) -> int:
         """
         Function to add an OpenFlow rule to a switch. Function
@@ -91,7 +104,7 @@ class ModifyNetworkAgent(AgentBase):
 
         return self.delete_rule(config)
 
-    agent_tools: list = [add_rule_to_switch, delete_rule_on_switch]
+    agent_tools: list = [add_rule_to_switch, delete_rule_on_switch, get_network_state]
 
     agent_tool_descriptions: str = render_text_description(agent_tools)
 
