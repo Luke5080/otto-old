@@ -1,8 +1,4 @@
-from otto.ryu.network_state_db.network_state import NetworkState
-from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
-from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 import argparse
-import toml
 
 def main():
 
@@ -20,7 +16,14 @@ def main():
 
     controller = args.controller
 
-    """
+    match controller:
+        case "ryu":
+            from otto.ryu.network_state_db.network_state import NetworkState
+            from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
+            from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+        case _:
+            return # for now
+
     ns = NetworkState()
 
     ns.create_network_state_db()
@@ -34,7 +37,6 @@ def main():
 
     except KeyboardInterrupt:
         ndo.drop_database()
-    """
-        
+
 if __name__ == "__main__":
     main()
