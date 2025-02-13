@@ -48,7 +48,7 @@ def main():
 
         print(response)
 
-    except KeyboardInterrupt:
+    except Exception:
         ndo.drop_database()
 
 

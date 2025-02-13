@@ -9,17 +9,18 @@ from otto.ryu.network_state_db.network_state import NetworkState
 
 class ModifyNetworkAgent(AgentBase):
     _prompt_holder = AgentPrompts()
-
+    _ns = NetworkState()
     agent_prompt: str = _prompt_holder.modify_network_agent_prompt
 
-    @staticmethod
-    def network_state():
-        ns = NetworkState()
 
-        return ns.get_registered_state()
+    def get_element_t(self, switch_id: str):
+        return self._ns.get_switch_details(switch_id)
+
+    def network_state(self):
+        return self._ns.get_registered_state()
 
     @staticmethod
-    def add_rule(config) -> int:
+    def add_rule_t(config) -> int:
         config = eval(config)
         headers = {
             'Content-Type': 'application/json'
@@ -33,13 +34,13 @@ class ModifyNetworkAgent(AgentBase):
             "match": config["match"],
             "actions": config["actions"]
         }
-        print(data)
+
         resp = requests.post('http://localhost:8080/stats/flowentry/add', headers=headers, json=data)
 
         return resp.status_code
 
     @staticmethod
-    def delete_rule(config) -> int:
+    def delete_rule_t(config) -> int:
         config = eval(config)
 
         headers = {
@@ -59,6 +60,7 @@ class ModifyNetworkAgent(AgentBase):
 
         return resp.status_code
 
+
     @tool
     def get_network_state(self):
         """
@@ -67,7 +69,7 @@ class ModifyNetworkAgent(AgentBase):
         return self.network_state()
 
     @tool
-    def add_rule_to_switch(self, config) -> int:
+    def add_rule(self, config) -> int:
         """
         Function to add an OpenFlow rule to a switch. Function
         takes the switch id as a paramtre, as well as dictionary holding flow parametres named config.
@@ -83,10 +85,10 @@ class ModifyNetworkAgent(AgentBase):
         "actions":[{"type":"OUTPUT", "port": 2}]
         """
 
-        return self.add_rule(config)
+        return self.add_rule_t(config)
 
     @tool
-    def delete_rule_on_switch(self, config) -> int:
+    def delete_rule(self, config) -> int:
         """
         Function to remove an OpenFlow rule to a switch. Function
         takes the switch id as a paramtre, as well as dictionary holding flow parametres named config.
@@ -102,9 +104,13 @@ class ModifyNetworkAgent(AgentBase):
 
         """
 
-        return self.delete_rule(config)
+        return self.delete_rule_t(config)
 
-    agent_tools: list = [add_rule_to_switch, delete_rule_on_switch, get_network_state]
+    @tool
+    def get_element(self, switch_id: str):
+        return self.get_element_t(switch_id)
+
+    agent_tools: list = [add_rule, delete_rule, get_network_state, get_element]
 
     agent_tool_descriptions: str = render_text_description(agent_tools)
 
