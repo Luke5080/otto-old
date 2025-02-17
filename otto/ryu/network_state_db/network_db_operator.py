@@ -108,7 +108,7 @@ class NetworkDbOperator:
     def drop_database(self):
         self._MongoConnector.drop_database('topology')
 
-    def dump_network_db(self):
+    def dump_network_db(self) -> dict:
         dumped_db = {}
         for collection in self._switch_collection.find():
             del collection["_id"]

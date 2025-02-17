@@ -9,7 +9,6 @@ class NetworkState:
     def __init__(self):
         self._network_db_operator = NetworkDbOperator.get_instance()
         self._nw_state_finder = NetworkStateFinder()
-        self._flow_mapping = {}
 
     def get_switch_details(self, switch_id: str) -> dict:
         switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
@@ -46,7 +45,7 @@ class NetworkState:
     def modify_switch_entry(self, switch_dpid: str, **kwargs) -> None:
         self._network_db_operator.modify_switch_document(switch_dpid, **kwargs)
 
-    def get_registered_state(self) -> list[dict]:
+    def get_registered_state(self) -> dict:
         return self._network_db_operator.dump_network_db()
 
     def __repr__(self):
@@ -55,5 +54,5 @@ class NetworkState:
     def __str__(self):
         ...
 
-    def __getitem__(self, switch_dpid: str) -> dict:
-        return self._network_db_operator.get_switch_document(switch_dpid)
+    def __getitem__(self, switch_id: str) -> dict:
+        return self.get_switch_details(switch_id)

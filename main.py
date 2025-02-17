@@ -1,5 +1,7 @@
 import argparse
-
+from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
+from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from langchain_core.messages import HumanMessage
 
 def main():
     parser = argparse.ArgumentParser(
@@ -21,9 +23,12 @@ def main():
             from otto.ryu.network_state_db.network_state import NetworkState
             from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
             from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-            from otto.ryu.intent_engine.modify_network_agent import ModifyNetworkAgent
         case _:
             return  # for now
+
+    match model:
+        case "gpt-4o-mini":
+            from langchain_openai import ChatOpenAI as llm_lib
 
     ns = NetworkState()
 
@@ -33,20 +38,34 @@ def main():
 
     ndo = NetworkDbOperator.get_instance()
 
+    llm = llm_lib(model_name=model, temperature=0)
+
+    prompt = """
+    You are one assistant as part of a team of network assistants who work together to help fulfill a given intent where the intent only
+    provides the business goal and deliverable to achieve, without specifying how to do it. As part of this team of assistants who help
+    to turn intents into actions which should be performed in the network to fulfill the given intent, your main responsibility is to
+    operate the tools which modify the underlying network to achieve the goals set out by the intent. Out of the team, you are
+    "Modify Network Operator", where you are the only assistant who has access to modify the state of the underlying network. To
+    achieve this, you MUST reason in depth before choosing to use any of the tools provided to you, as the effect of a miscalculated
+    change could severely impact the network. You MUST take as much pre-caution before utilising a tool by reasoning in great depth
+    as you would if the underlying network was a critical network which provides constant uptime to thousands of users with NO ROOM 
+    FOR DOWNTIME.  A switch can be identified with a datapath id in 16 HEX Format or switch id which is the datapath ID in decimal. 
+    Some API calls require the switch ID to be in decimal format (e.g. 0000000000000001 must be passed as 1)
+    """
+
+    toolkit = create_tool_list()
+
+    p = IntentProcessor(llm, toolkit, prompt)
+
     try:
         nsu.start()
 
-        agent = ModifyNetworkAgent()
+        messages = [HumanMessage(
+            content="Host 1 should be able to make SSH connections to Host2. You can assume that Host 1 has an IP of 10.1.1.1 and Host 2 has an IP of 10.1.1.2")]
 
-        test = agent.create_agent()
+        result = p.graph.invoke({"messages": messages})
 
-        user_input = str(input(">>> "))
-        response = test.invoke({
-            "input": user_input,
-            "agent_scratchpad": ""
-        })
-
-        print(response)
+        print(result)
 
     except Exception:
         ndo.drop_database()
