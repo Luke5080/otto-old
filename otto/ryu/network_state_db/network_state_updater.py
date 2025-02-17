@@ -92,7 +92,6 @@ class NetworkStateUpdater(Thread):
 
     def run(self):
         while True:
-            print("Starting..")
             current_nw_state = {}
             for document in self._nw_state.get_network_state():
                 current_nw_state[document["name"]] = document
@@ -100,7 +99,6 @@ class NetworkStateUpdater(Thread):
             diff_found = DeepDiff(self._nw_state.get_registered_state(), current_nw_state)
 
             if len(diff_found) > 0:
-                print(diff_found)
                 if "values_changed" in diff_found:
                     self._update_value(diff_found['values_changed'])
 
@@ -109,7 +107,5 @@ class NetworkStateUpdater(Thread):
 
                 if "dictionary_item_removed" in diff_found:
                     self._remove_value(diff_found['dictionary_item_removed'], current_nw_state)
-
-                print("done")
 
             time.sleep(60)

@@ -5,6 +5,9 @@ from otto.ryu.network_state_db.network_state import NetworkState
 
 @tool
 def get_nw_state() -> dict:
+    """
+    Function to get the current entire network state
+    """
     network_state = NetworkState()
     return network_state.get_registered_state()
 
@@ -57,7 +60,7 @@ def add_rule(switch_id: str, table_id: int, match: dict, actions: list, priority
 
 
 @tool
-def delete_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int = 0) -> int:
+def delete_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int) -> int:
     """
     Function to remove an OpenFlow rule to a switch.
     Args:

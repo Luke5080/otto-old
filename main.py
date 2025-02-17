@@ -1,3 +1,4 @@
+from pprint import pprint
 import argparse
 from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
@@ -50,25 +51,24 @@ def main():
     change could severely impact the network. You MUST take as much pre-caution before utilising a tool by reasoning in great depth
     as you would if the underlying network was a critical network which provides constant uptime to thousands of users with NO ROOM 
     FOR DOWNTIME.  A switch can be identified with a datapath id in 16 HEX Format or switch id which is the datapath ID in decimal. 
-    Some API calls require the switch ID to be in decimal format (e.g. 0000000000000001 must be passed as 1)
+    Some API calls require the switch ID to be in decimal format (e.g. 0000000000000001 must be passed as 1). After each successful tool execution, you MUST call the "check_element" tool to verify the state of the switch affected by the previous operation. Ensure that you pass the correct switch ID (in decimal format) when invoking "check_element".
+    Switch ports for a switch are described with a port number, hardware address and name. When setting up flow rules, be sure to use the decimal version of the port number (e.g. 00000002 is 2) in the actions field of the tool calls.
     """
 
     toolkit = create_tool_list()
 
     p = IntentProcessor(llm, toolkit, prompt)
 
-    try:
-        nsu.start()
+    nsu.start()
 
-        messages = [HumanMessage(
-            content="Host 1 should be able to make SSH connections to Host2. You can assume that Host 1 has an IP of 10.1.1.1 and Host 2 has an IP of 10.1.1.2")]
+
+    while True:
+        user_intent = str(input(">>> "))
+        messages = [HumanMessage(content=user_intent)]
 
         result = p.graph.invoke({"messages": messages})
 
-        print(result)
-
-    except Exception:
-        ndo.drop_database()
+        pprint(result)
 
 
 if __name__ == "__main__":

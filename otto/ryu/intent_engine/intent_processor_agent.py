@@ -12,7 +12,7 @@ class IntentProcessor:
         graph.add_node("check_state", self.check_state)
         graph.add_node("reason_intent", self.reason_intent)
         graph.add_node("execute_action", self.execute_action)
-        graph.add_node("check_element", self.check_element)
+        # graph.add_node("check_element", self.check_element)
 
         graph.set_entry_point("check_state")
         graph.add_edge("check_state", "reason_intent")
@@ -22,17 +22,16 @@ class IntentProcessor:
             {"continue": "execute_action", "done": END}
         )
 
-        graph.add_edge("execute_action", "check_element")
-        graph.add_edge("check_element", "reason_intent")
+        graph.add_edge("execute_action", "check_state")
 
         self.graph = graph.compile()
 
+    """
     def check_element(self, state: AgentState, switch_id:str):
-        """
         Get details of a switch
         Args:
             switch_id: switch id in decimal
-        """
+
 
         switch_document = self.tools["check_switch"].invoke({"switch_id": switch_id})
 
@@ -41,10 +40,11 @@ class IntentProcessor:
                 SystemMessage(content=f"Switch document {switch_id}:\n{switch_document}")
             ]
         }
+    """
 
     def check_state(self, state: AgentState):
         """Get current network state"""
-        current_state = self.tools["get_nw_view"].invoke({})
+        current_state = self.tools["get_nw_state"].invoke({})
         return {
             'messages': [
                 SystemMessage(content=f"Current Network State:\n{current_state}")
