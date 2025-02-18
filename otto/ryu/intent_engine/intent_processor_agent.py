@@ -11,6 +11,7 @@ class IntentProcessor:
 
         graph = StateGraph(AgentState)
         graph.add_node("check_state", self.check_state)
+        graph.add_node("understand_intent", self.understand_intent)
         graph.add_node("reason_intent", self.reason_intent)
         graph.add_node("execute_action", self.execute_action)
 
@@ -34,6 +35,15 @@ class IntentProcessor:
                 SystemMessage(content=f"Current Network State:\n{current_state}")
             ]
         }
+
+    def understand_intent(self, state: AgentState):
+        messages = state['messages']
+
+        messages = [SystemMessage(content="Clearly provide your understanding of the intent:\n")] + messages
+
+        response = self.model.invoke(messages)
+
+        return {'messages': state['messages'], 'intent_understanding': response}
 
     def reason_intent(self, state: AgentState):
         """LLM decides next action based on intent and state"""
