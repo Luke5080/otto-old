@@ -24,7 +24,7 @@ def check_switch(switch_id: str) -> dict:
 
 
 @tool
-def add_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int = 0) -> int:
+def add_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int = 32768) -> int:
     """
     Function to add an OpenFlow rule to a switch.
     Args:
