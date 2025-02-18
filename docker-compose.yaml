@@ -1,9 +1,16 @@
 version: "3.8"
 
 services:
-  mongodb:
+  network_state_db:
     image: mongo:latest
     container_name: otto_network_state_db
     ports:
       - "27017:27017"
 
+  processed_intents_db:
+    image: mongo:latest
+    container_name: otto_processed_intents_db
+    volumes:
+      - "/var/lib/otto_processed_intents:/data/db"
+    ports:
+      - "27018:27017"
