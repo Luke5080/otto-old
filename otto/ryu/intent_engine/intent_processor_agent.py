@@ -1,13 +1,15 @@
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import SystemMessage, ToolMessage
 from otto.intent_utils.agent_state import AgentState
-
+from otto.intent_utils.model_factory import ModelFactory
 
 class IntentProcessor:
     def __init__(self, model, tools, system_prompt):
         self.system = system_prompt
+        self.tool_list = tools
         self.tools = {tool.name: tool for tool in tools}
         self.model = model.bind_tools(tools, tool_choice="auto")
+        self.model_factory = ModelFactory()
 
         graph = StateGraph(AgentState)
         graph.add_node("check_state", self.check_state)
@@ -28,11 +30,8 @@ class IntentProcessor:
         self.graph = graph.compile()
 
     def change_model(self, model):
-        if model in ["gpt-4o", "gpt-4o-mini"]:
-            self.model = model.bind_tools(self.tools, tool_choice="auto")
-
-        else:
-            raise Exception
+            chosen_model = self.model_factory.get_model(model)
+            self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
 
     def check_state(self, state: AgentState):
         """Get current network state"""

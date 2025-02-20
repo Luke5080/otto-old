@@ -22,17 +22,23 @@ class OttoShell(cmd.Cmd):
         self.intro = f"""
         Otto - Intent Based Northbound Interface for SDN Controllers
         Author: Luke Marshall
-        
+
         Configured model: {self._model}
         Configured Controller: {self._controller}
         """
+
+    def do_get_model(self):
+        print(self._model)
 
     def do_set_model(self, model):
         if model and model in ["gpt-4o", "gpt-4o-mini"]:
             self._agent.change_model(model)
         else:
-            self._model = inquirer.list_input("Available Models:", choices=["gpt-4o", "gpt-4o-mini"])
-            self._agent.change_model(model)
+            model_choice = inquirer.list_input("Available Models:", choices=["gpt-4o", "gpt-4o-mini"])
+            self._agent.change_model(model_choice)
+
+        self._model = self._agent.model.model_name
+        print(f"Changed model to {self._model}")
 
     def do_set_controller(self, controller):
         if controller and controller in ["ryu", "onos"]:
