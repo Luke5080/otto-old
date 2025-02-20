@@ -1,66 +1,41 @@
-from pprint import pprint
-import argparse
+import typer
 from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
-from langchain_core.messages import HumanMessage
-from otto.intent_utils.agent_prompt import prompt
+from otto.shell.otto_shell import OttoShell
+from otto.intent_utils.agent_prompt import intent_processor_prompt
+from otto.intent_utils.model_factory import ModelFactory
+from otto.controller_factory import ControllerFactory
 
-def main():
-    parser = argparse.ArgumentParser(
-        prog="otto - Intent Based Northbound Interface for SDN Controllers",
-        description="Declare intents to your Software Defined Network!",
-    )
 
-    parser.add_argument("-m", "--model")
-    parser.add_argument("-c", "--controller")
+def main(model: str = typer.Option(..., prompt=True),
+         controller: str = typer.Option(..., prompt=True)
+         ):
 
-    args = parser.parse_args()
-
-    model = args.model
-
-    controller = args.controller
+    model_fetcher = ModelFactory()
+    controller_fetcher = ControllerFactory()
 
     match controller:
         case "ryu":
-            from otto.ryu.network_state_db.network_state import NetworkState
-            from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
-            from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+            controller = controller_fetcher.get_controller("ryu")
         case _:
-            return  # for now
+            return # for now
 
     match model:
         case "gpt-4o-mini":
-            from langchain_openai import ChatOpenAI as llm_lib
+            llm = model_fetcher.get_model("gpt-4o-mini")
         case "gpt-4o":
-            from langchain_openai import ChatOpenAI as llm_lib
+            llm = model_fetcher.get_model("gpt-4o")
+        case _:
+            raise Exception  # for now
 
-    ns = NetworkState()
+    controller.create_network_state()
 
-    ns.create_network_state_db()
+    controller.start_state_updater()
 
-    nsu = NetworkStateUpdater()
+    p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt)
 
-    ndo = NetworkDbOperator.get_instance()
-
-    llm = llm_lib(model_name=model, temperature=0)
-
-    prompt = ...
-
-    toolkit = create_tool_list()
-
-    p = IntentProcessor(llm, toolkit, prompt)
-
-    nsu.start()
-
-    while True:
-        user_intent = str(input(">>> "))
-
-        messages = [HumanMessage(content=user_intent)]
-
-        result = p.graph.invoke({"messages": messages})
-
-        pprint(result)
+    OttoShell("ryu", p).cmdloop()
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

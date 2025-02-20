@@ -27,6 +27,13 @@ class IntentProcessor:
 
         self.graph = graph.compile()
 
+    def change_model(self, model):
+        if model in ["gpt-4o", "gpt-4o-mini"]:
+            self.model = model.bind_tools(self.tools, tool_choice="auto")
+
+        else:
+            raise Exception
+
     def check_state(self, state: AgentState):
         """Get current network state"""
         current_state = self.tools["get_nw_state"].invoke({})
