@@ -1,5 +1,5 @@
 import time
-from threading import Thread
+from threading import Thread, Event
 from otto.ryu.network_state_db.network_state import NetworkState
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from deepdiff import DeepDiff
@@ -15,6 +15,7 @@ class NetworkStateUpdater(Thread):
         super().__init__()
         self._nw_state = NetworkState()
         self._nw_db = NetworkDbOperator.get_instance()
+        self.stop_event = Event()
 
     @staticmethod
     def _format_key(key_path: str) -> list:
@@ -82,25 +83,25 @@ class NetworkStateUpdater(Thread):
 
         return updates
 
-    def _remove_value(self, added_value: dict) -> list:
+    def _remove_value(self, removed_value: dict) -> list:
         """
         either deletes an entire switch document OR deletes a key in a switch document
         """
 
         updates = []
 
-        for added_item in added_value:
-            added_item = self._format_key(added_item)
+        for removed_item in removed_value:
+            added_item = self._format_key(removed_item)
 
-            if len(added_item) == 1:
-                query = {"_id": self._nw_db.object_ids[added_item[0]]}
+            if len(removed_item) == 1:
+                query = {"_id": self._nw_db.object_ids[removed_item[0]]}
 
                 updates.append(DeleteOne(query))
 
             else:
-                query = {"_id": self._nw_db.object_ids[added_item.pop(0)]}
+                query = {"_id": self._nw_db.object_ids[removed_item.pop(0)]}
 
-                update = {"$unset": {".".join(added_item): ""}}
+                update = {"$unset": {".".join(removed_item): ""}}
 
                 updates.append(UpdateOne(query, update))
 
@@ -145,7 +146,7 @@ class NetworkStateUpdater(Thread):
         return updates
 
     def run(self):
-        while True:
+        while not self.stop_event.is_set():
             current_nw_state = {}
             for document in self._nw_state.get_network_state():
                 current_nw_state[document["name"]] = document

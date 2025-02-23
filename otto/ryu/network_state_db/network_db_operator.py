@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from exceptions import NetworkDatabaseException, SwitchDocumentNotFound, MultipleNetworkDbOperators
 from pymongo.errors import PyMongoError
-
+import atexit
 
 class NetworkDbOperator:
     _MongoConnector: MongoClient
@@ -18,10 +18,14 @@ class NetworkDbOperator:
     def __init__(self):
         if NetworkDbOperator.__instance is None:
             self._MongoConnector = MongoClient('localhost', 27017)
+
+            if 'topology' in self._MongoConnector.list_database_names():
+                self.drop_database()
+
             self._network_state_db = self._MongoConnector["topology"]
             self._switch_collection = self._network_state_db["switches"]
             self.object_ids = {}
-
+            atexit.register(self.drop_database)
             NetworkDbOperator.__instance = self
 
         else:

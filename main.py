@@ -14,19 +14,15 @@ def main(model: str = typer.Option(..., prompt=True),
     model_fetcher = ModelFactory()
     controller_fetcher = ControllerFactory()
 
-    match controller:
-        case "ryu":
-            controller = controller_fetcher.get_controller("ryu")
-        case _:
-            return # for now
+    if controller not in ["ryu", "onos"]:
+        return
 
-    match model:
-        case "gpt-4o-mini":
-            llm = model_fetcher.get_model("gpt-4o-mini")
-        case "gpt-4o":
-            llm = model_fetcher.get_model("gpt-4o")
-        case _:
-            raise Exception  # for now
+    if model not in ["gpt-4o", "gpt-4o-mini"]:
+        return
+
+    controller = controller_fetcher.get_controller("ryu")
+
+    llm = model_fetcher.get_model(model)
 
     controller.create_network_state()
 
@@ -34,7 +30,7 @@ def main(model: str = typer.Option(..., prompt=True),
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt)
 
-    OttoShell("ryu", p).cmdloop()
+    OttoShell("ryu", p).run()
 
 
 if __name__ == "__main__":

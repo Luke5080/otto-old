@@ -17,6 +17,9 @@ class RyuEnvironment(ControllerEnvironment):
     def start_state_updater(self):
         self.network_state_updater.start()
 
+    def stop_state_updater(self):
+        self.network_state_updater.stop_event.set()
+
 
 
 
