@@ -37,8 +37,8 @@ class IntentProcessor:
             chosen_model = self.model_factory.get_model(model)
             self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
 
-    def save_intent(self, state, AgentState):
-        ...
+    def save_intent(self, state: AgentState):
+        pass
 
     def check_state(self, state: AgentState):
         """Get current network state"""
@@ -52,7 +52,7 @@ class IntentProcessor:
     def understand_intent(self, state: AgentState):
         messages = state['messages']
 
-        messages = [SystemMessage(content="Clearly provide your understanding of the intent:\n")] + messages
+        messages = [SystemMessage(content="Clearly provide your full understanding of the intent. This should be reasoned in depth, and should be an individual task, meaning you can not get help from a human operator.\n")] + messages
 
         response = self.model.invoke(messages)
 
