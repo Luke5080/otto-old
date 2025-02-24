@@ -91,7 +91,7 @@ class NetworkStateUpdater(Thread):
         updates = []
 
         for removed_item in removed_value:
-            added_item = self._format_key(removed_item)
+            removed_item = self._format_key(removed_item)
 
             if len(removed_item) == 1:
                 query = {"_id": self._nw_db.object_ids[removed_item[0]]}
@@ -175,4 +175,4 @@ class NetworkStateUpdater(Thread):
                 if len(network_state_db_updates) > 0:
                     self._nw_db.bulk_update(network_state_db_updates)
 
-            time.sleep(60)
+            self.stop_event.wait(60)
