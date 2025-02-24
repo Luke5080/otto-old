@@ -1,11 +1,17 @@
 from langgraph.graph import StateGraph, END
+from pymongo import MongoClient
 from langchain_core.messages import SystemMessage, ToolMessage
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
+from datetime import datetime
+
 
 class IntentProcessor:
     def __init__(self, model, tools, system_prompt, context):
-        self.context= context
+        self.context = context
+        self.mongo_connector = MongoClient('localhost', 27018)
+        self.database = self.mongo_connector['intent_history']
+        self.collection = self.database['processed_intents']
         self.system = system_prompt
         self.tool_list = tools
         self.tools = {tool.name: tool for tool in tools}
@@ -34,11 +40,20 @@ class IntentProcessor:
         self.graph = graph.compile()
 
     def change_model(self, model):
-            chosen_model = self.model_factory.get_model(model)
-            self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
+        """Change the language model used by IntentProcessor"""
+        chosen_model = self.model_factory.get_model(model)
+        self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
 
     def save_intent(self, state: AgentState):
-        pass
+        """ Register processed intent into processed_intents_db"""
+        processed_intent = {
+            "declaredBy": self.context,
+            "intent": state['messages'][0].content,
+            "outcome": state['operations'],
+            "timestamp": datetime.now()
+        }
+
+        self.collection.insert_one(processed_intent)
 
     def check_state(self, state: AgentState):
         """Get current network state"""
@@ -52,7 +67,8 @@ class IntentProcessor:
     def understand_intent(self, state: AgentState):
         messages = state['messages']
 
-        messages = [SystemMessage(content="Clearly provide your full understanding of the intent. This should be reasoned in depth, and should be an individual task, meaning you can not get help from a human operator.\n")] + messages
+        messages = [SystemMessage(
+            content="Clearly provide your full understanding of the intent. This should be reasoned in depth, and should be an individual task, meaning you can not get help from a human operator.\n")] + messages
 
         response = self.model.invoke(messages)
 
