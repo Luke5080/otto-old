@@ -28,9 +28,9 @@ def main(model: str = typer.Option(..., prompt=True),
 
     controller.start_state_updater()
 
-    p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt)
+    p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt,"User")
 
-    OttoShell("ryu", p).run()
+    OttoShell("ryu", p, controller).run()
 
 
 if __name__ == "__main__":

@@ -4,7 +4,8 @@ from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
 
 class IntentProcessor:
-    def __init__(self, model, tools, system_prompt):
+    def __init__(self, model, tools, system_prompt, context):
+        self.context= context
         self.system = system_prompt
         self.tool_list = tools
         self.tools = {tool.name: tool for tool in tools}
@@ -12,26 +13,32 @@ class IntentProcessor:
         self.model_factory = ModelFactory()
 
         graph = StateGraph(AgentState)
-        graph.add_node("check_state", self.check_state)
         graph.add_node("understand_intent", self.understand_intent)
+        graph.add_node("check_state", self.check_state)
         graph.add_node("reason_intent", self.reason_intent)
         graph.add_node("execute_action", self.execute_action)
+        graph.add_node("save_intent", self.save_intent)
 
-        graph.set_entry_point("check_state")
+        graph.set_entry_point("understand_intent")
+        graph.add_edge("understand_intent", "check_state")
         graph.add_edge("check_state", "reason_intent")
         graph.add_conditional_edges(
             "reason_intent",
             self.needs_action,
-            {"continue": "execute_action", "done": END}
+            {"continue": "execute_action", "done": "save_intent"}
         )
 
         graph.add_edge("execute_action", "reason_intent")
+        graph.add_edge("save_intent", END)
 
         self.graph = graph.compile()
 
     def change_model(self, model):
             chosen_model = self.model_factory.get_model(model)
             self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
+
+    def save_intent(self, state, AgentState):
+        ...
 
     def check_state(self, state: AgentState):
         """Get current network state"""

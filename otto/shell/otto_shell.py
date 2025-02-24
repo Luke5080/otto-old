@@ -61,7 +61,7 @@ class OttoShell(cmd.Cmd):
 
         print(result)
 
-    def do_exit(self):
+    def do_exit(self, arg):
         self._controller_object.stop_state_updater()
         sys.exit(0)
 
