@@ -19,7 +19,10 @@ the decimal version of the port number (e.g. 00000002 is 2) in the actions field
 to another host(s), you MUST check that the reverse path is set up for flow rules. E.g = host 1 is connected to switch1, and host
 2 is connected to switch2. Both switch1 and switch2 are connected together through port 2 on each switch. When fulfilling an intent
 to allow for connectivity, in this example SSH, flow rules must be installed on switch 1 to allow SSH traffic from host 1 to host 2,
-as well as to accept connections from host2 to host1. The same must be done on switch2. 
+as well as to accept connections from host2 to host1. The same must be done on switch2.
+- Intents to set up connections between hosts using standard protocols (HTTP, SSH, FTP, etc) should follow these guidelines: the host(s)
+to initiate the connection should have the flow to match the tp_dst [port of the protocol] (e.g. SSH would be 22) for the FORWARD PATH to the host,
+and use tp_src for the REVERSE PATH (e.g. 22 again in the case of SSH).
 - If an intent is to remove a connection, either based on a specific protocol or not, it is not acceptable to ONLY delete the flow
 (if present) which allows said connection. You MUST remove the flow(s) (if present) and then add a flow on each switch to drop packets
 based on the specific match criteria for the intent.
