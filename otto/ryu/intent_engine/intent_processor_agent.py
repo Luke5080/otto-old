@@ -54,11 +54,11 @@ class IntentProcessor:
         }
 
         self.collection.insert_one(processed_intent)
-
+        yield {'save_intent' : processed_intent}
     def check_state(self, state: AgentState):
         """Get current network state"""
         current_state = self.tools["get_nw_state"].invoke({})
-        return {
+        yield {
             'messages': [
                 SystemMessage(content=f"Current Network State:\n{current_state}")
             ]
@@ -72,7 +72,7 @@ class IntentProcessor:
 
         response = self.model.invoke(messages)
 
-        return {'messages': state['messages'], 'intent_understanding': response}
+        yield {'messages': state['messages'], 'intent_understanding': response}
 
     def reason_intent(self, state: AgentState):
         """LLM decides next action based on intent and state"""
@@ -82,12 +82,12 @@ class IntentProcessor:
 
         response = self.model.invoke(messages)
 
-        return {'messages': [response]}
+        yield {'messages': [response]}
 
     def needs_action(self, state: AgentState):
         """Check if any actions are needed"""
         last_msg = state['messages'][-1]
-        return "continue" if len(getattr(last_msg, 'tool_calls', [])) > 0 else "done"
+        yield "continue" if len(getattr(last_msg, 'tool_calls', [])) > 0 else "done"
 
     def execute_action(self, state: AgentState):
         """Execute network configuration tools"""
@@ -114,4 +114,4 @@ class IntentProcessor:
                     content=f"Error: {str(e)}"
                 ))
 
-        return {'messages': results, 'operations': operations}
+        yield {'messages': results, 'operations': operations}

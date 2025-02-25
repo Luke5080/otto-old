@@ -1,11 +1,15 @@
 import cmd
+from yaspin import yaspin
 import inquirer
 from langchain_core.messages import HumanMessage
 from otto.ryu.ryu_environment import RyuEnvironment
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 import sys
+from rich.console import Console
+from rich.markdown import Markdown
 
 class OttoShell(cmd.Cmd):
+    _console: Console
     _model: str = None
     _controller_object: RyuEnvironment
     _controller: str = None
@@ -18,6 +22,7 @@ class OttoShell(cmd.Cmd):
         self._agent = agent
         self._model = agent.model.model_name
         self._controller_object = controller_object
+        self._console = Console()
 
         self.prompt = "otto> "
 
@@ -27,6 +32,8 @@ class OttoShell(cmd.Cmd):
 
         Configured model: {self._model}
         Configured Controller: {self._controller}
+
+        Agent Output Verbosity Level: {self._verbosity_level}
         """
 
     def do_get_model(self):
@@ -52,14 +59,36 @@ class OttoShell(cmd.Cmd):
         if verbosity and verbosity in ["LOW", "VERBOSE"]:
             self._verbosity_level = verbosity
         else:
-            self._controller = inquirer.list_input("Supported Controllers:", choices=["ryu", "onos"])
+            self._controller = inquirer.list_input("Verbosity Levels:", choices=["LOW", "VERBOSE"])
+
+    def verbose_output(self, intent):
+        for output in self._agent.graph.stream({"messages": intent}):
+            if 'save_intent' in output:
+                continue
+            for key, value in output.items():
+                if 'messages' in value:
+                    self._console.print(Markdown(f"**STEP: {key.replace('_',' ').upper()}**"))
+                    self._console.print(Markdown(value['messages'][-1].content))
+                if 'intent_understanding' in value:
+                    self._console.print(Markdown(value['intent_understanding'].content))
+
+                if 'operations' in value:
+                    self._console.print(Markdown(f"**Operations completed**:\n{value['operations']}"))
+                    operations = value['operations']
+
+    @yaspin(text="Attempting to fulfill intent..")
+    def non_verbose_output(self, intent):
+        result = self._agent.graph.invoke({"messages": intent})
+
+        self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
 
     def do_intent(self, intent):
         messages = [HumanMessage(content=intent)]
 
-        result = self._agent.graph.invoke({"messages": messages})
-
-        print(result)
+        if self._verbosity_level == "VERBOSE":
+            self.verbose_output(messages)
+        else:
+             self.non_verbose_output(messages)
 
     def do_exit(self, arg):
         self._controller_object.stop_state_updater()
