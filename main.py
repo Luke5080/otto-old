@@ -17,7 +17,7 @@ def main(model: str = typer.Option(..., prompt=True),
     if controller not in ["ryu", "onos"]:
         return
 
-    if model not in ["gpt-4o", "gpt-4o-mini"]:
+    if model not in ["gpt-4o", "gpt-4o-mini", "llama"]:
         return
 
     controller = controller_fetcher.get_controller("ryu")

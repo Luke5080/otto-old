@@ -40,7 +40,7 @@ class OttoShell(cmd.Cmd):
         print(self._model)
 
     def do_set_model(self, model):
-        if model and model in ["gpt-4o", "gpt-4o-mini"]:
+        if model and model in ["gpt-4o", "gpt-4o-mini","llama"]:
             self._agent.change_model(model)
         else:
             model_choice = inquirer.list_input("Available Models:", choices=["gpt-4o", "gpt-4o-mini"])
