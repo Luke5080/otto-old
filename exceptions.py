@@ -32,3 +32,6 @@ class MultipleNetworkDbOperators(Exception):
 
 class MultipleNetworkStateInstances(Exception):
     pass
+
+class ProcessedIntentsDbException(Exception):
+    pass

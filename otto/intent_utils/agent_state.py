@@ -6,3 +6,4 @@ class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     operations: list[str]
     intent_understanding: str
+    network_state: dict

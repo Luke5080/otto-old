@@ -13,7 +13,7 @@ class NetworkStateUpdater(Thread):
 
     def __init__(self):
         super().__init__()
-        self._nw_state = NetworkState()
+        self._nw_state = NetworkState.get_instance()
         self._nw_db = NetworkDbOperator.get_instance()
         self.stop_event = Event()
 
@@ -154,6 +154,7 @@ class NetworkStateUpdater(Thread):
             diff_found = DeepDiff(self._nw_state.get_registered_state(), current_nw_state)
 
             if len(diff_found) > 0:
+                self._nw_state.construct_network_graph(current_nw_state)
 
                 network_state_db_updates = []
 

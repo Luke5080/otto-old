@@ -1,9 +1,12 @@
+from datetime import datetime
+from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.graph import StateGraph, END
 from pymongo import MongoClient
-from langchain_core.messages import SystemMessage, ToolMessage
+from pymongo.errors import PyMongoError
+
+from exceptions import ProcessedIntentsDbException
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
-from datetime import datetime
 
 
 class IntentProcessor:
@@ -46,22 +49,29 @@ class IntentProcessor:
 
     def save_intent(self, state: AgentState):
         """ Register processed intent into processed_intents_db"""
-        processed_intent = {
-            "declaredBy": self.context,
-            "intent": state['messages'][0].content,
-            "outcome": state['operations'],
-            "timestamp": datetime.now()
-        }
 
-        self.collection.insert_one(processed_intent)
-        yield {'save_intent' : processed_intent}
+        try:
+            processed_intent = {
+                "declaredBy": self.context,
+                "intent": state['messages'][0].content,
+                "outcome": state['operations'],
+                "timestamp": str(datetime.now())
+            }
+
+            self.collection.insert_one(processed_intent)
+        except PyMongoError as e:
+            raise ProcessedIntentsDbException(
+                f"Error while putting processed_intent into otto_processed_intents_db: {e}")
+        yield {'save_intent': processed_intent}
+
     def check_state(self, state: AgentState):
         """Get current network state"""
         current_state = self.tools["get_nw_state"].invoke({})
         yield {
             'messages': [
                 SystemMessage(content=f"Current Network State:\n{current_state}")
-            ]
+            ],
+            'network_state': current_state
         }
 
     def understand_intent(self, state: AgentState):

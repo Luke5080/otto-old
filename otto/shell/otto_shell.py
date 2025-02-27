@@ -8,10 +8,11 @@ import sys
 from rich.console import Console
 from rich.markdown import Markdown
 
+
 class OttoShell(cmd.Cmd):
     _console: Console
     _model: str = None
-    _controller_object: RyuEnvironment
+    _controller_object: RyuEnvironment # FIXME
     _controller: str = None
     _agent: IntentProcessor
     _verbosity_level: str = "VERBOSE"
@@ -67,14 +68,13 @@ class OttoShell(cmd.Cmd):
                 continue
             for key, value in output.items():
                 if 'messages' in value:
-                    self._console.print(Markdown(f"**STEP: {key.replace('_',' ').upper()}**"))
+                    self._console.print(Markdown(f"**STEP: {key.replace('_', ' ').upper()}**"))
                     self._console.print(Markdown(value['messages'][-1].content))
                 if 'intent_understanding' in value:
                     self._console.print(Markdown(value['intent_understanding'].content))
 
                 if 'operations' in value:
                     self._console.print(Markdown(f"**Operations completed**:\n{value['operations']}"))
-                    operations = value['operations']
 
     @yaspin(text="Attempting to fulfill intent..")
     def non_verbose_output(self, intent):
@@ -88,7 +88,7 @@ class OttoShell(cmd.Cmd):
         if self._verbosity_level == "VERBOSE":
             self.verbose_output(messages)
         else:
-             self.non_verbose_output(messages)
+            self.non_verbose_output(messages)
 
     def do_exit(self, arg):
         self._controller_object.stop_state_updater()
@@ -101,7 +101,6 @@ class OttoShell(cmd.Cmd):
                 self.cmdloop()
             except KeyboardInterrupt:
                 print("Interrupt caught: please use the 'exit' command to exit gracefully.")
-
 
     def do_EOF(self, line):
         return True
