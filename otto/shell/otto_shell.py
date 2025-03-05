@@ -2,6 +2,8 @@ import cmd
 from yaspin import yaspin
 import inquirer
 from langchain_core.messages import HumanMessage
+
+from otto.ryu.network_state_db.network_state import NetworkState
 from otto.ryu.ryu_environment import RyuEnvironment
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 import sys
@@ -12,10 +14,11 @@ from rich.markdown import Markdown
 class OttoShell(cmd.Cmd):
     _console: Console
     _model: str = None
-    _controller_object: RyuEnvironment # FIXME
+    _controller_object: RyuEnvironment  # FIXME
     _controller: str = None
     _agent: IntentProcessor
     _verbosity_level: str = "VERBOSE"
+    _network_state: NetworkState
 
     def __init__(self, controller, agent, controller_object):
         super().__init__()
@@ -24,6 +27,7 @@ class OttoShell(cmd.Cmd):
         self._model = agent.model.model_name
         self._controller_object = controller_object
         self._console = Console()
+        self._network_state = NetworkState.get_instance()
 
         self.prompt = "otto> "
 
@@ -40,8 +44,12 @@ class OttoShell(cmd.Cmd):
     def do_get_model(self):
         print(self._model)
 
+    def do_get_hosts(self, line):
+        for host, switch_port in self._network_state.host_mappings.items():
+            print(f"HOST: {host} CONNECTED TO: {switch_port}")
+
     def do_set_model(self, model):
-        if model and model in ["gpt-4o", "gpt-4o-mini","llama"]:
+        if model and model in ["gpt-4o", "gpt-4o-mini", "llama"]:
             self._agent.change_model(model)
         else:
             model_choice = inquirer.list_input("Available Models:", choices=["gpt-4o", "gpt-4o-mini"])

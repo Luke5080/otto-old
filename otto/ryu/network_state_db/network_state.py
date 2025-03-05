@@ -2,6 +2,7 @@ from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 import networkx as nx
 from exceptions import MultipleNetworkStateInstances
+import uuid
 
 
 class NetworkState:
@@ -49,8 +50,8 @@ class NetworkState:
         """
         self.network_graph.clear()
         self.switch_port_mappings = {}
+        self.host_mappings = {}
 
-        host_id = 1  # this is not great
         for switch, switch_data in network_state.items():
             for switch_port, remote_port in switch_data.get('portMappings', {}).items():
                 remote_switch = format(int(remote_port.split('-')[0][1]), '016x')
@@ -60,13 +61,13 @@ class NetworkState:
                 self.switch_port_mappings[(remote_switch, switch)] = (remote_port, switch_port)
 
             for switch_port, remote_host in switch_data.get('connectedHosts', {}).items():
-                host_string = f"host{host_id}"
+                host_string = f"host_{uuid.uuid4()}"
                 self.network_graph.add_edge(switch, host_string)
 
                 self.switch_port_mappings[(switch, host_string)] = (switch_port, host_string)
                 self.switch_port_mappings[(host_string, switch)] = (host_string, switch_port)
 
-                host_id += 1
+                self.host_mappings[host_string] = switch_port
 
     def get_network_state(self) -> dict:
         found_switches = self._nw_state_finder.get_switches()
@@ -80,6 +81,7 @@ class NetworkState:
             self._network_db_operator.put_switch_to_db(found_switch)
 
         self.construct_network_graph(self.get_registered_state())
+
     def delete_switch_nw_state(self, switch_dpid: str) -> None:
         self._network_db_operator.remove_switch_document(switch_dpid)
 
