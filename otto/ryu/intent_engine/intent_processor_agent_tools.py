@@ -27,27 +27,20 @@ def get_path_between_nodes(source: str, destination:str) -> list[tuple[str, str]
     """
     Function to get a path between nodes in the network. The nodes can either be a switch or a host.
     Args:
-        source: string identifier for the source of the path to retrieve. source can either be a switch or a host.
-        A switch is identified by a 16 HEX switch DPID, e.g. for switch with an ID of decimal 1, it will be
-        0000000000000001. For hosts, provide the name of the host e.g. host2.
-        destination: string indicating the destination node for the path. Follow the same format as instructed
+        source: source of the path to retrieve. source can either be a switch or a host.
+        A switch is identified by a 16 HEX switch DPID, e.g. for switch with an ID of decimal = 0000000000000001. 
+        For hosts, provide the name of the host e.g. host2.
+        destination: destination node for the path. Follow the same format as instructed
         in the source argument descriptor.
-
-    When used to get path between two hosts distributed across the network, the function will return an array of tuples
-    indicating the paths through the network device's ports to arrive to the destination. For example, for the input:
+    When used to get path between two hosts, the function will return an array of tuples
+    indicating the paths through the network device's ports to arrive to the destination. E.g:
     src: host1 destination: host3
-    and the output is:
+    Output:
     [('host1', 's1-eth1'), ('s1-eth3', 's5-eth1'), ('s5-eth3', 's3-eth1'), ('s3-eth3', 'host3')]
-    We can understand that:
     Host1 is connected to switch1 on port 1 (eth1)
     Switch1 port 3 (eth3) is connected to switch5 port 1 (eth1)
     Switch5 port 3 (eth3) is connected to switch3 port 1 (eth1)
     Switch3 is connected to host3 via port 3 (eth3)
-
-    This means for an OpenFlow rule to connect host1 to host3, the pseudo flow will look as follows:
-    Switch1: SRC: HOST 1 DST: HOST3 OUTPUT: 3 (to switch 5)
-    Switch5 2: SRC: HOST 1 DST: HOST3 OUTPUT: 3 (to switch 3)
-    Switch 3: SRC: HOST 1 DST: HOST3 OUTPUT: 3 (to host3)
     """
     network_state = NetworkState.get_instance()
 

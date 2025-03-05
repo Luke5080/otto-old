@@ -9,7 +9,7 @@ class NetworkState:
     _nw_state_finder: NetworkStateFinder
     network_graph: nx.Graph
 
-    __instance: None
+    __instance = None
 
     @staticmethod
     def get_instance():
@@ -23,6 +23,8 @@ class NetworkState:
             self._nw_state_finder = NetworkStateFinder()
             self.network_graph = nx.Graph()
             self.switch_port_mappings = {}
+
+            NetworkState.__instance = self
 
         else:
             raise MultipleNetworkStateInstances(f"An occurrence of Network State already exists at {self.__instance}")
@@ -62,7 +64,7 @@ class NetworkState:
                 self.network_graph.add_edge(switch, host_string)
 
                 self.switch_port_mappings[(switch, host_string)] = (switch_port, host_string)
-                self.switch_port_mappings[(switch, host_string)] = (switch_port, host_string)
+                self.switch_port_mappings[(host_string, switch)] = (host_string, switch_port)
 
                 host_id += 1
 
@@ -77,6 +79,7 @@ class NetworkState:
         for found_switch in self.get_network_state():
             self._network_db_operator.put_switch_to_db(found_switch)
 
+        self.construct_network_graph(self.get_registered_state())
     def delete_switch_nw_state(self, switch_dpid: str) -> None:
         self._network_db_operator.remove_switch_document(switch_dpid)
 

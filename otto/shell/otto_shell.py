@@ -80,7 +80,7 @@ class OttoShell(cmd.Cmd):
     def non_verbose_output(self, intent):
         result = self._agent.graph.invoke({"messages": intent})
 
-        self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
+        self._console.print(Markdown(f"**Operations completed:**\n{result}"))
 
     def do_intent(self, intent):
         messages = [HumanMessage(content=intent)]
