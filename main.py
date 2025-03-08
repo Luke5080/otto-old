@@ -5,14 +5,19 @@ from otto.shell.otto_shell import OttoShell
 from otto.intent_utils.agent_prompt import intent_processor_prompt
 from otto.intent_utils.model_factory import ModelFactory
 from otto.controller_factory import ControllerFactory
+import sys
 
-
+"""
 def main(model: str = typer.Option(..., prompt=True),
          controller: str = typer.Option(..., prompt=True)
          ):
+"""
+def main():
 
     model_fetcher = ModelFactory()
     controller_fetcher = ControllerFactory()
+    controller = sys.argv[1]
+    model = sys.argv[2]
 
     if controller not in ["ryu", "onos"]:
         return
@@ -34,4 +39,5 @@ def main(model: str = typer.Option(..., prompt=True),
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    #typer.run(main)
+    main()

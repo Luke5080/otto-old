@@ -54,7 +54,7 @@ class IntentProcessor:
             processed_intent = {
                 "declaredBy": self.context,
                 "intent": state['messages'][0].content,
-                "outcome": state['operations'],
+                "outcome": state.get('operations', {}),
                 "timestamp": str(datetime.now())
             }
 
