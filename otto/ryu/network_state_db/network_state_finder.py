@@ -144,17 +144,23 @@ class NetworkStateFinder:
 
         hosts_discovered = hosts_discovered.json()
 
-        if len(hosts_discovered) > 0:
+        if hosts_discovered:
+            host_count = 1
             for connected_host in hosts_discovered:
                 connected_port = connected_host['port']['name']
 
+                host_id = f"host-{str(int(switch_dpid, 16))}-{str(host_count)}"
+
                 host_details = {
+                    'id': host_id,
                     'mac': connected_host['mac'],
                     'ipv4': connected_host['ipv4'],
                     'ipv6': connected_host['ipv6']
                 }
 
                 host_mappings[connected_port] = host_details
+
+                host_count += 1
 
         return host_mappings
 

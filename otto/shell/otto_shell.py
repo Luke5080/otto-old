@@ -45,8 +45,10 @@ class OttoShell(cmd.Cmd):
         print(self._model)
 
     def do_get_hosts(self, line):
-        for host, switch_port in self._network_state.host_mappings.items():
-            print(f"HOST: {host} CONNECTED TO: {switch_port}")
+        for switch, port_mapping in self._network_state.host_mappings.items():
+            print(f"Switch: {switch}\n")
+            for port, host in port_mapping.items():
+                print(f"{port} : {host}")
 
     def do_set_model(self, model):
         if model and model in ["gpt-4o", "gpt-4o-mini", "llama"]:
