@@ -22,9 +22,10 @@ class OttoShell(cmd.Cmd):
 
     def __init__(self, controller, agent, controller_object):
         super().__init__()
+        self.available_models = ["gpt-4o", "gpt-4o-mini", "llama", "deepseek", "gemini", "gpt-o3-mini"]
         self._controller = controller
         self._agent = agent
-        self._model = 'TEST' # agent.model.model_name
+        self._model = agent.model.model_name
         self._controller_object = controller_object
         self._console = Console()
         self._network_state = NetworkState.get_instance()
@@ -46,15 +47,15 @@ class OttoShell(cmd.Cmd):
 
     def do_get_hosts(self, line):
         for switch, port_mapping in self._network_state.host_mappings.items():
-            print(f"Switch: {switch}\n")
+            print(f"Switch: {switch}")
             for port, host in port_mapping.items():
                 print(f"{port} : {host}")
 
     def do_set_model(self, model):
-        if model and model in ["gpt-4o", "gpt-4o-mini", "llama"]:
+        if model and model in self.available_models:
             self._agent.change_model(model)
         else:
-            model_choice = inquirer.list_input("Available Models:", choices=["gpt-4o", "gpt-4o-mini"])
+            model_choice = inquirer.list_input("Available Models:", choices=self.available_models)
             self._agent.change_model(model_choice)
 
         self._model = self._agent.model.model_name

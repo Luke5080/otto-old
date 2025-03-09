@@ -3,6 +3,7 @@ from exceptions import NetworkDatabaseException, SwitchDocumentNotFound, Multipl
 from pymongo.errors import PyMongoError
 import atexit
 
+
 class NetworkDbOperator:
     _MongoConnector: MongoClient
     object_ids: dict
@@ -39,7 +40,7 @@ class NetworkDbOperator:
 
             self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
-            return inserted_doc.inserted_id  # FIXME: unit testing purposes
+            return inserted_doc.inserted_id
 
         except PyMongoError as e:
             raise NetworkDatabaseException(

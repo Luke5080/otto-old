@@ -59,6 +59,7 @@ class IntentProcessor:
             }
 
             self.collection.insert_one(processed_intent)
+
         except PyMongoError as e:
             raise ProcessedIntentsDbException(
                 f"Error while putting processed_intent into otto_processed_intents_db: {e}")
