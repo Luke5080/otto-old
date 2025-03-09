@@ -62,12 +62,12 @@ class IntentProcessor:
         except PyMongoError as e:
             raise ProcessedIntentsDbException(
                 f"Error while putting processed_intent into otto_processed_intents_db: {e}")
-        yield {'save_intent': processed_intent}
+        return {'save_intent': processed_intent}
 
     def check_state(self, state: AgentState):
         """Get current network state"""
         current_state = self.tools["get_nw_state"].invoke({})
-        yield {
+        return {
             'messages': [
                 SystemMessage(content=f"Current Network State:\n{current_state}")
             ],
@@ -82,7 +82,7 @@ class IntentProcessor:
 
         response = self.model.invoke(messages)
 
-        yield {'messages': state['messages'], 'intent_understanding': response}
+        return {'messages': state['messages'], 'intent_understanding': response}
 
     def reason_intent(self, state: AgentState):
         """LLM decides next action based on intent and state"""
@@ -92,12 +92,13 @@ class IntentProcessor:
 
         response = self.model.invoke(messages)
 
-        yield {'messages': [response]}
+        return {'messages': [response]}
 
     def needs_action(self, state: AgentState):
         """Check if any actions are needed"""
         last_msg = state['messages'][-1]
-        yield "continue" if len(getattr(last_msg, 'tool_calls', [])) > 0 else "done"
+        print(last_msg)
+        return "continue" if len(last_msg.tool_calls) > 0 else "done"
 
     def execute_action(self, state: AgentState):
         """Execute network configuration tools"""
@@ -124,4 +125,4 @@ class IntentProcessor:
                     content=f"Error: {str(e)}"
                 ))
 
-        yield {'messages': results, 'operations': operations}
+        return {'messages': results, 'operations': operations}

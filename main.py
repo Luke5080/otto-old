@@ -22,7 +22,7 @@ def main():
     if controller not in ["ryu", "onos"]:
         return
 
-    if model not in ["gpt-4o", "gpt-4o-mini", "llama"]:
+    if model not in ["gpt-4o","gpt-3o-mini", "gpt-4o-mini", "llama", "deepseek", "gemini"]:
         return
 
     controller = controller_fetcher.get_controller("ryu")

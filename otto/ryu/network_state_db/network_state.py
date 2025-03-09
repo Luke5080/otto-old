@@ -70,7 +70,7 @@ class NetworkState:
                 self.switch_port_mappings[(switch, host_id)] = (switch_port, host_id)
                 self.switch_port_mappings[(host_id, switch)] = (host_id, switch_port)
 
-                self.host_mappings[switch][switch_port] = host_id
+                self.host_mappings.setdefault(switch, {})[switch_port] = host_id
 
     def get_network_state(self) -> dict:
         found_switches = self._nw_state_finder.get_switches()

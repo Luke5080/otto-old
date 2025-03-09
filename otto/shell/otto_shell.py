@@ -24,7 +24,7 @@ class OttoShell(cmd.Cmd):
         super().__init__()
         self._controller = controller
         self._agent = agent
-        self._model = agent.model.model_name
+        self._model = 'TEST' # agent.model.model_name
         self._controller_object = controller_object
         self._console = Console()
         self._network_state = NetworkState.get_instance()
