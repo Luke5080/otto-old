@@ -6,6 +6,7 @@ services:
     container_name: otto_network_state_db
     ports:
       - "27017:27017"
+    restart: always
 
   processed_intents_db:
     image: mongo:latest
@@ -14,3 +15,19 @@ services:
       - "/var/lib/otto_processed_intents:/data/db"
     ports:
       - "27018:27017"
+    restart: always
+
+  network_application_db:
+    build: .
+    container_name: otto_network_application_db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=network_application_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - "network_application_db:/var/lib/mysql"
+    restart: always
+
+volumes:
+  network_application_db:
