@@ -9,6 +9,7 @@ from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 import sys
 from rich.console import Console
 from rich.markdown import Markdown
+from prettytable import PrettyTable
 
 
 class OttoShell(cmd.Cmd):
@@ -46,10 +47,14 @@ class OttoShell(cmd.Cmd):
         print(self._model)
 
     def do_get_hosts(self, line):
+        host_table = PrettyTable()
+        host_table_columns = list(self._network_state.host_mappings)
         for switch, port_mapping in self._network_state.host_mappings.items():
-            print(f"Switch: {switch}")
-            for port, host in port_mapping.items():
-                print(f"{port} : {host}")
+            connected_hosts = [f"{port}:{host}" for port, host in port_mapping.items()]
+
+            host_table.add_column(host_table_columns[host_table_columns.index(switch)], connected_hosts)
+
+        print(host_table)
 
     def do_set_model(self, model):
         if model and model in self.available_models:
