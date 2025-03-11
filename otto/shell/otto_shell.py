@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 import mysql.connector
 from prettytable import PrettyTable
-
+import atexit
 
 class OttoShell(cmd.Cmd):
     _console: Console
@@ -32,9 +32,11 @@ class OttoShell(cmd.Cmd):
         self._controller_object = controller_object
         self._console = Console()
         self._network_state = NetworkState.get_instance()
+        atexit.register(self._close_network_app_db_connection)
         self._create_app_arg_parser = argparse.ArgumentParser(prog="Create a network application",
                                                               description="Add app")
-
+        self._create_app_arg_parser.add_argument('--name', required=True, help="app name")
+        self._create_app_arg_parser.add_argument('--password', required=True, help="password")
         self._database_connection = mysql.connector.connect(
             user='root', password='root', host='localhost', port=3306, database='network_application_db'
         )
@@ -115,16 +117,16 @@ class OttoShell(cmd.Cmd):
             self.non_verbose_output(messages)
 
     def do_create_app(self, args):
-        self._create_app_arg_parser.add_argument('--name', required=True, help="app name")
-        self._create_app_arg_parser.add_argument('--password', required=True, help="password")
-
         try:
             args = self._create_app_arg_parser.parse_args(args.split())
 
             cursor = self._database_connection.cursor()
 
             cursor.execute(
-                f"INSERT INTO network_application_db(app_name, password) VALUES({args.app_name}, {args.password})")
+                f"INSERT INTO network_applications(app_name, password) VALUES(%s, %s)", (args.name, args.password)
+            )
+
+            self._database_connection.commit()
 
             cursor.fetchall()
 
@@ -148,3 +150,6 @@ class OttoShell(cmd.Cmd):
 
     def postloop(self):
         return True
+
+    def _close_network_app_db_connection(self) -> None:
+        self._database_connection.close()
