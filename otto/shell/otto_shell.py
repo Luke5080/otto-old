@@ -90,6 +90,7 @@ class OttoShell(cmd.Cmd):
             self._controller = inquirer.list_input("Verbosity Levels:", choices=["LOW", "VERBOSE"])
 
     def verbose_output(self, intent):
+        print(intent)
         for output in self._agent.graph.stream({"messages": intent}):
             if 'save_intent' in output:
                 continue
@@ -105,6 +106,7 @@ class OttoShell(cmd.Cmd):
 
     @yaspin(text="Attempting to fulfill intent..")
     def non_verbose_output(self, intent):
+        print(f"INTENT: {type(intent)}")
         result = self._agent.graph.invoke({"messages": intent})
 
         self._console.print(Markdown(f"**Operations completed:**\n{result}"))

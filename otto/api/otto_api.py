@@ -1,3 +1,4 @@
+from langchain_core.messages import HumanMessage
 from flask import Flask, request, jsonify
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
@@ -94,7 +95,11 @@ class OttoApi:
             else:
                 designated_processor = self._intent_processor_pool.get_intent_processor(intent_request['model'])
 
-            result = designated_processor.graph.invoke({"messages": intent_request['intent']})
+            intent = intent_request['intent']
+
+            messages = [HumanMessage(content=intent)]
+
+            result = designated_processor.graph.invoke({"messages": messages})
 
             self._intent_processor_pool.return_intent_processor(designated_processor)
 
@@ -104,3 +109,4 @@ class OttoApi:
 
     def run(self):
         self._app.run()
+

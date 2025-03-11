@@ -22,7 +22,7 @@ class IntentProcessor:
         self.model_name = model.model_name
         self.model_factory = ModelFactory()
 
-
+        print(self.model_name)
         graph = StateGraph(AgentState)
         graph.add_node("understand_intent", self.understand_intent)
         graph.add_node("check_state", self.check_state)

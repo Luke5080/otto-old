@@ -20,12 +20,15 @@ class IntentProcessorPool:
         for i in range(3):
             self.pool.append(IntentProcessor(llm, create_tool_list(), intent_processor_prompt))
 
-    def get_intent_processor(self, model_required: str) -> IntentProcessor:
-        if self.pool and any(hasattr(p, model_required) for p in self.pool):
-            return next(p for p in self.pool if hasattr(p, model_required))
 
+    def get_intent_processor(self, model_required: str) -> IntentProcessor:
+        if self.pool and any(p.model_name == model_required for p in self.pool):
+            x = next(p for p in self.pool if p.model_name == model_required)
+            print(f"found p {x}")
+            return x
         else:
-            return IntentProcessor(model_required, create_tool_list(), intent_processor_prompt)
+            print("no p found")
+            return IntentProcessor(self._model_fetcher.get_model(model_required), create_tool_list(), intent_processor_prompt)
 
     def return_intent_processor(self, processor: IntentProcessor):
         self.pool.append(processor)

@@ -1,4 +1,5 @@
 import typer
+from otto.api.otto_api import OttoApi
 from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.shell.otto_shell import OttoShell
@@ -18,6 +19,8 @@ def main():
     controller_fetcher = ControllerFactory()
     controller = sys.argv[1]
     model = sys.argv[2]
+    api = OttoApi()
+    api.run()
 
     if controller not in ["ryu", "onos"]:
         return
