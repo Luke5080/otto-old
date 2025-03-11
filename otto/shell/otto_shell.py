@@ -13,6 +13,7 @@ import mysql.connector
 from prettytable import PrettyTable
 import atexit
 
+
 class OttoShell(cmd.Cmd):
     _console: Console
     _model: str = None

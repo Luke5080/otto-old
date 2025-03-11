@@ -10,7 +10,7 @@ from otto.intent_utils.model_factory import ModelFactory
 
 
 class IntentProcessor:
-    def __init__(self, model, tools, system_prompt, context):
+    def __init__(self, model, tools, system_prompt, context="User"):
         self.context = context
         self.mongo_connector = MongoClient('localhost', 27018)
         self.database = self.mongo_connector['intent_history']
@@ -19,7 +19,9 @@ class IntentProcessor:
         self.tool_list = tools
         self.tools = {tool.name: tool for tool in tools}
         self.model = model.bind_tools(tools, tool_choice="auto")
+        self.model_name = model.model_name
         self.model_factory = ModelFactory()
+
 
         graph = StateGraph(AgentState)
         graph.add_node("understand_intent", self.understand_intent)
