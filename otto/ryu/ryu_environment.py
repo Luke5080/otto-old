@@ -1,8 +1,8 @@
 from otto.controller_environment import ControllerEnvironment
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
-from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
+from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
 
 
 class RyuEnvironment(ControllerEnvironment):

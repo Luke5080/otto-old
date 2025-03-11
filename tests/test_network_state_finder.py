@@ -1,14 +1,14 @@
-import unittest
-import responses
 import hashlib
 import json
+import unittest
+
+import responses
 from requests.exceptions import ConnectionError
+
+from exceptions import (FlowRetrievalException, HostRetrievalException,
+                        PortMappingException, PortRetrievalException,
+                        SwitchRetrievalException)
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
-from exceptions import (
-    SwitchRetrievalException, PortRetrievalException,
-    PortMappingException, FlowRetrievalException,
-    HostRetrievalException
-)
 
 
 class TestNetworkStateFinder(unittest.TestCase):

@@ -1,12 +1,15 @@
+import sys
+
 import typer
+
 from otto.api.otto_api import OttoApi
-from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
-from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
-from otto.shell.otto_shell import OttoShell
+from otto.controller_factory import ControllerFactory
 from otto.intent_utils.agent_prompt import intent_processor_prompt
 from otto.intent_utils.model_factory import ModelFactory
-from otto.controller_factory import ControllerFactory
-import sys
+from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from otto.ryu.intent_engine.intent_processor_agent_tools import \
+    create_tool_list
+from otto.shell.otto_shell import OttoShell
 
 """
 def main(model: str = typer.Option(..., prompt=True),

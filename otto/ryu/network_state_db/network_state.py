@@ -1,8 +1,10 @@
+import uuid
+
+import networkx as nx
+
+from exceptions import MultipleNetworkStateInstances
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
-import networkx as nx
-from exceptions import MultipleNetworkStateInstances
-import uuid
 
 
 class NetworkState:

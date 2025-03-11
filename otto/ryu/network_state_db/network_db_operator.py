@@ -1,7 +1,10 @@
-from pymongo import MongoClient
-from exceptions import NetworkDatabaseException, SwitchDocumentNotFound, MultipleNetworkDbOperators
-from pymongo.errors import PyMongoError
 import atexit
+
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+
+from exceptions import (MultipleNetworkDbOperators, NetworkDatabaseException,
+                        SwitchDocumentNotFound)
 
 
 class NetworkDbOperator:

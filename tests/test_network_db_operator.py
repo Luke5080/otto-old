@@ -1,7 +1,9 @@
 import unittest
 from unittest.mock import patch
+
 import mongomock
 from pymongo.errors import PyMongoError
+
 from exceptions import NetworkDatabaseException
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 

@@ -1,7 +1,9 @@
-from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.intent_utils.agent_prompt import intent_processor_prompt
-from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
 from otto.intent_utils.model_factory import ModelFactory
+from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from otto.ryu.intent_engine.intent_processor_agent_tools import \
+    create_tool_list
+
 
 class IntentProcessorPool:
     _model_fetcher: ModelFactory

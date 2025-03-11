@@ -1,10 +1,12 @@
 import time
-from threading import Thread, Event
-from otto.ryu.network_state_db.network_state import NetworkState
-from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+from threading import Event, Thread
+
 from deepdiff import DeepDiff
-from pymongo import UpdateOne, DeleteOne, InsertOne
 from glom import glom
+from pymongo import DeleteOne, InsertOne, UpdateOne
+
+from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+from otto.ryu.network_state_db.network_state import NetworkState
 
 
 class NetworkStateUpdater(Thread):

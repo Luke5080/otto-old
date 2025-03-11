@@ -1,7 +1,9 @@
 import networkx as nx
 import requests
-from langchain_core.tools import tool, StructuredTool
+from langchain_core.tools import StructuredTool, tool
+
 from otto.ryu.network_state_db.network_state import NetworkState
+
 
 @tool
 def get_nw_state() -> dict:

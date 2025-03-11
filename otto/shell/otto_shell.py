@@ -1,17 +1,19 @@
-import cmd
-from yaspin import yaspin
-import inquirer
-from langchain_core.messages import HumanMessage
 import argparse
-from otto.ryu.network_state_db.network_state import NetworkState
-from otto.ryu.ryu_environment import RyuEnvironment
-from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+import atexit
+import cmd
 import sys
+
+import inquirer
+import mysql.connector
+from langchain_core.messages import HumanMessage
+from prettytable import PrettyTable
 from rich.console import Console
 from rich.markdown import Markdown
-import mysql.connector
-from prettytable import PrettyTable
-import atexit
+from yaspin import yaspin
+
+from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.ryu_environment import RyuEnvironment
 
 
 class OttoShell(cmd.Cmd):

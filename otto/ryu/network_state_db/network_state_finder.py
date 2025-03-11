@@ -1,12 +1,12 @@
 import hashlib
 import json
+
 import requests
-from requests.exceptions import HTTPError, ConnectionError
-from exceptions import (
-    SwitchRetrievalException, PortRetrievalException,
-    PortMappingException, FlowRetrievalException,
-    HostRetrievalException
-)
+from requests.exceptions import ConnectionError, HTTPError
+
+from exceptions import (FlowRetrievalException, HostRetrievalException,
+                        PortMappingException, PortRetrievalException,
+                        SwitchRetrievalException)
 
 
 class NetworkStateFinder:
