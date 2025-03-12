@@ -1,7 +1,7 @@
 import datetime
 import os
 from functools import wraps
-
+from exceptions import MultipleFlaskApiException
 import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
@@ -15,15 +15,28 @@ class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
 
-    def __init__(self):
-        self.app = Flask(__name__)
-        self._database_connection = mysql.connector.connect(
-            user='root', password='root', host='localhost', port=3306, database='network_application_db'
-        )
-        self.app.config['SECRET_KEY'] = os.urandom(16)
-        self._intent_processor_pool = IntentProcessorPool()
+    __instance = None
 
-        self._create_routes()
+    @staticmethod
+    def get_instance():
+        if OttoApi.__instance is None:
+            OttoApi()
+        return OttoApi.__instance
+
+    def __init__(self):
+        if OttoApi.__instance is None:
+            self.app = Flask(__name__)
+            self._database_connection = mysql.connector.connect(
+                user='root', password='root', host='localhost', port=3306, database='network_application_db'
+            )
+            self.app.config['SECRET_KEY'] = os.urandom(16)
+            self._intent_processor_pool = IntentProcessorPool()
+
+            self._create_routes()
+
+            OttoApi.__instance = self
+        else:
+            raise MultipleFlaskApiException(f"An occurrence of OttoApi already exists at  {OttoApi.__instance}")
 
     def _create_routes(self):
         def validate_token(func):

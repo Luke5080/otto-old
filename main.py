@@ -1,8 +1,5 @@
-import sys
-
 import typer
-from otto.api.otto_gunicorn import GunicornManager
-from otto.api.otto_api import OttoApi
+from otto.api.otto_api_thread import OttoApiThread
 from otto.controller_factory import ControllerFactory
 from otto.intent_utils.agent_prompt import intent_processor_prompt
 from otto.intent_utils.model_factory import ModelFactory
@@ -11,21 +8,17 @@ from otto.ryu.intent_engine.intent_processor_agent_tools import \
     create_tool_list
 from otto.shell.otto_shell import OttoShell
 
-"""
+
 def main(model: str = typer.Option(..., prompt=True),
-         controller: str = typer.Option(..., prompt=True)
+         controller: str = typer.Option(..., prompt=True),
+         shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
-"""
+    api_thread = OttoApiThread()
 
+    api_thread.start()
 
-def main():
     model_fetcher = ModelFactory()
     controller_fetcher = ControllerFactory()
-    controller = sys.argv[1]
-    model = sys.argv[2]
-
-    otto_flask_api = OttoApi()
-    GunicornManager(otto_flask_api.app).run()
 
     if controller not in ["ryu", "onos"]:
         return
@@ -43,9 +36,9 @@ def main():
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 
-    OttoShell("ryu", p, controller).run()
+    if shell:
+        OttoShell("ryu", p, controller).run()
 
 
 if __name__ == "__main__":
-    # typer.run(main)
     main()

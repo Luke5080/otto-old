@@ -35,3 +35,9 @@ class MultipleNetworkStateInstances(Exception):
 
 class ProcessedIntentsDbException(Exception):
     pass
+
+class MultipleFlaskApiException(Exception):
+    pass
+
+class MultipleGunicornManager(Exception):
+    pass
