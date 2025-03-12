@@ -16,7 +16,7 @@ def main(model: str = typer.Option(..., prompt=True),
          shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
 
-    otto_flask_api = OttoApi()
+    otto_flask_api = OttoApi.get_instance()
 
     model_fetcher = ModelFactory()
     controller_fetcher = ControllerFactory()
@@ -37,7 +37,9 @@ def main(model: str = typer.Option(..., prompt=True),
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 
-    api_process = multiprocessing.Process(target=GunicornManager(otto_flask_api.app).run())
+    gm = GunicornManager.get_instance(otto_flask_api.app)
+
+    api_process = multiprocessing.Process(target=gm.run)
 
     api_process.start()
 
@@ -46,4 +48,4 @@ def main(model: str = typer.Option(..., prompt=True),
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
