@@ -105,7 +105,7 @@ class OttoApi:
 
             self._intent_processor_pool.return_intent_processor(designated_processor)
 
-            return jsonify({'message': result})
+            return jsonify({'message': result['operations']})
 
 
 

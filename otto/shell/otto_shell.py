@@ -22,7 +22,7 @@ class OttoShell(cmd.Cmd):
     _controller_object: RyuEnvironment  # FIXME
     _controller: str = None
     _agent: IntentProcessor
-    _verbosity_level: str = "VERBOSE"
+    _verbosity_level: str
     _network_state: NetworkState
     _create_app_arg_parser: argparse.ArgumentParser
 
@@ -32,6 +32,7 @@ class OttoShell(cmd.Cmd):
         self._controller = controller
         self._agent = agent
         self._model = agent.model.model_name
+        self._verbosity_level = "VERBOSE"
         self._controller_object = controller_object
         self._console = Console()
         self._network_state = NetworkState.get_instance()
@@ -89,10 +90,10 @@ class OttoShell(cmd.Cmd):
         if verbosity and verbosity in ["LOW", "VERBOSE"]:
             self._verbosity_level = verbosity
         else:
-            self._controller = inquirer.list_input("Verbosity Levels:", choices=["LOW", "VERBOSE"])
+            self._verbosity_level = inquirer.list_input("Verbosity Levels:", choices=["LOW", "VERBOSE"])
+        print(self._verbosity_level)
 
     def verbose_output(self, intent):
-        print(intent)
         for output in self._agent.graph.stream({"messages": intent}):
             if 'save_intent' in output:
                 continue
@@ -108,10 +109,9 @@ class OttoShell(cmd.Cmd):
 
     @yaspin(text="Attempting to fulfill intent..")
     def non_verbose_output(self, intent):
-        print(f"INTENT: {type(intent)}")
         result = self._agent.graph.invoke({"messages": intent})
 
-        self._console.print(Markdown(f"**Operations completed:**\n{result}"))
+        self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
 
     def do_intent(self, intent):
         messages = [HumanMessage(content=intent)]
