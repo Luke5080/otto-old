@@ -25,7 +25,7 @@ def main():
     model = sys.argv[2]
 
     otto_flask_api = OttoApi()
-    GunicornManager(otto_flask_api).run()
+    GunicornManager(otto_flask_api.app).run()
 
     if controller not in ["ryu", "onos"]:
         return

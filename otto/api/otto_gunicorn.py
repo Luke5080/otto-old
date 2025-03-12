@@ -8,7 +8,7 @@ class GunicornManager(BaseApplication):
         self.host = "0.0.0.0"
         self.port = 5000
         self.options = {
-            "bind": f"{self.host} : {self.port}",
+            "bind": f"{self.host}:{self.port}",
             "workers": multiprocessing.cpu_count() * 2  # maybe an overshoot
         }
 

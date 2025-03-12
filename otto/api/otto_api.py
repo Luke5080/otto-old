@@ -16,11 +16,11 @@ class OttoApi:
     _intent_processor_pool: IntentProcessorPool
 
     def __init__(self):
-        self._app = Flask(__name__)
+        self.app = Flask(__name__)
         self._database_connection = mysql.connector.connect(
             user='root', password='root', host='localhost', port=3306, database='network_application_db'
         )
-        self._app.config['SECRET_KEY'] = os.urandom(16)
+        self.app.config['SECRET_KEY'] = os.urandom(16)
         self._intent_processor_pool = IntentProcessorPool()
 
         self._create_routes()
@@ -36,7 +36,7 @@ class OttoApi:
 
                 try:
                     token = token.split(" ")[1]
-                    token_data = jwt.decode(token, self._app.config['SECRET_KEY'], algorithms=['HS256'])
+                    token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
                     print(token_data)
                 except Exception as e:
                     print(e)
@@ -45,7 +45,7 @@ class OttoApi:
 
             return wrapped
 
-        @self._app.route('/login', methods=['POST'])
+        @self.app.route('/login', methods=['POST'])
         def app_login():
             login_request = request.get_json()
 
@@ -74,14 +74,14 @@ class OttoApi:
                 token = jwt.encode({
                     'app': login_request['application-name'],
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=3600)
-                }, self._app.config['SECRET_KEY'], algorithm='HS256')
+                }, self.app.config['SECRET_KEY'], algorithm='HS256')
                 return jsonify({'token': token})
 
             else:
                 return jsonify(
                     {'message': f"Incorrect password for application {login_request['application-name']}"}), 403
 
-        @self._app.route("/declare-intent", methods=['POST'])
+        @self.app.route("/declare-intent", methods=['POST'])
         @validate_token
         def process_intent():
             intent_request = request.get_json()
@@ -105,4 +105,4 @@ class OttoApi:
             return jsonify({'message': result['operations']})
 
     def run(self):
-        self._app.run()
+        self.app.run()
