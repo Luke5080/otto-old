@@ -17,11 +17,10 @@ class IntentProcessorPool:
         llm = self._model_fetcher.get_model("gpt-4o")
         for i in range(3):
             self.pool.append(IntentProcessor(llm, create_tool_list(), intent_processor_prompt))
-        llm = self._model_fetcher.get_model("deepseek")
 
+        llm = self._model_fetcher.get_model("deepseek")
         for i in range(3):
             self.pool.append(IntentProcessor(llm, create_tool_list(), intent_processor_prompt))
-
 
     def get_intent_processor(self, model_required: str) -> IntentProcessor:
         if self.pool and any(p.model_name == model_required for p in self.pool):
@@ -30,9 +29,8 @@ class IntentProcessorPool:
             return x
         else:
             print("no p found")
-            return IntentProcessor(self._model_fetcher.get_model(model_required), create_tool_list(), intent_processor_prompt)
+            return IntentProcessor(self._model_fetcher.get_model(model_required), create_tool_list(),
+                                   intent_processor_prompt)
 
     def return_intent_processor(self, processor: IntentProcessor):
         self.pool.append(processor)
-
-

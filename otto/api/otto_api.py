@@ -15,7 +15,6 @@ class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
 
-
     def __init__(self):
         self._app = Flask(__name__)
         self._database_connection = mysql.connector.connect(
@@ -27,8 +26,6 @@ class OttoApi:
         self._create_routes()
 
     def _create_routes(self):
-
-        @staticmethod
         def validate_token(func):
             @wraps(func)
             def wrapped(*args, **kwargs):
@@ -107,8 +104,5 @@ class OttoApi:
 
             return jsonify({'message': result['operations']})
 
-
-
     def run(self):
         self._app.run()
-
