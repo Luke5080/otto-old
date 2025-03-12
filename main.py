@@ -1,5 +1,7 @@
 import typer
-from otto.api.otto_api_thread import OttoApiThread
+import multiprocessing
+from otto.api.otto_api import OttoApi
+from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_factory import ControllerFactory
 from otto.intent_utils.agent_prompt import intent_processor_prompt
 from otto.intent_utils.model_factory import ModelFactory
@@ -13,9 +15,8 @@ def main(model: str = typer.Option(..., prompt=True),
          controller: str = typer.Option(..., prompt=True),
          shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
-    api_thread = OttoApiThread()
 
-    api_thread.start()
+    otto_flask_api = OttoApi()
 
     model_fetcher = ModelFactory()
     controller_fetcher = ControllerFactory()
@@ -35,6 +36,10 @@ def main(model: str = typer.Option(..., prompt=True),
     controller.start_state_updater()
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
+
+    api_process = multiprocessing.Process(target=GunicornManager(otto_flask_api.app).run())
+
+    api_process.start()
 
     if shell:
         OttoShell("ryu", p, controller).run()
