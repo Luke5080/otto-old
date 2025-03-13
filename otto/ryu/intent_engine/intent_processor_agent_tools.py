@@ -1,6 +1,6 @@
 import networkx as nx
 import requests
-from langchain_core.tools import StructuredTool, tool
+from langchain_core.tools import tool
 
 from otto.ryu.network_state_db.network_state import NetworkState
 
@@ -24,8 +24,9 @@ def check_switch(switch_id: str) -> dict:
     network_state = NetworkState.get_instance()
     return network_state[switch_id]
 
+
 @tool
-def get_path_between_nodes(source: str, destination:str) -> list[tuple[str, str]]:
+def get_path_between_nodes(source: str, destination: str) -> list[tuple[str, str]]:
     """
     Function to get a path between nodes in the network. The nodes can either be a switch or a host.
     Args:
@@ -49,10 +50,11 @@ def get_path_between_nodes(source: str, destination:str) -> list[tuple[str, str]
     shortest_path = nx.shortest_path(network_state.network_graph, source, destination)
 
     full_path = []
-    for i in range(len(shortest_path) -1):
-        full_path.append(network_state.switch_port_mappings[(shortest_path[i], shortest_path[i+1])])
+    for i in range(len(shortest_path) - 1):
+        full_path.append(network_state.switch_port_mappings[(shortest_path[i], shortest_path[i + 1])])
 
     return full_path
+
 
 @tool
 def add_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int = 32768) -> int:

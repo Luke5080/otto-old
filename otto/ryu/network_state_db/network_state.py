@@ -1,5 +1,3 @@
-import uuid
-
 import networkx as nx
 
 from exceptions import MultipleNetworkStateInstances

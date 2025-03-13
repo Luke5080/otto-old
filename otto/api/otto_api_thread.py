@@ -1,4 +1,5 @@
 from threading import Thread
+
 from otto.api.otto_api import OttoApi
 from otto.api.otto_gunicorn import GunicornManager
 

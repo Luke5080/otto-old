@@ -1,13 +1,13 @@
 import datetime
 import os
 from functools import wraps
-from exceptions import MultipleFlaskApiException
+
 import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage
 
-from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from exceptions import MultipleFlaskApiException
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 
 
