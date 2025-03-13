@@ -3,7 +3,7 @@ import networkx as nx
 from exceptions import MultipleNetworkStateInstances
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
-
+from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
 class NetworkState:
     _network_db_operator: NetworkDbOperator
@@ -21,6 +21,7 @@ class NetworkState:
     def __init__(self):
         if self.__instance is None:
             self._network_db_operator = NetworkDbOperator.get_instance()
+            self._processed_intents_db_operator = ProcessedIntentsDbOperator.get_instance()
             self._nw_state_finder = NetworkStateFinder()
             self.network_graph = nx.Graph()
             self.switch_port_mappings = {}
@@ -98,6 +99,9 @@ class NetworkState:
 
     def get_registered_state(self) -> dict:
         return self._network_db_operator.dump_network_db()
+
+    def register_processed_intent(self, context, intent, outcome, timestamp) -> dict:
+        return self._processed_intents_db_operator.save_intent(intent, context, outcome, timestamp) # weird wrapper to the original method
 
     def __repr__(self):
         ...

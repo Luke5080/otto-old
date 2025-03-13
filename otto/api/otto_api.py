@@ -101,7 +101,7 @@ class OttoApi:
             token = token.split(" ")[1]
 
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
-            print(token_data['app'])
+
             intent_request = request.get_json()
 
             if not intent_request or 'intent' not in intent_request:
@@ -111,6 +111,8 @@ class OttoApi:
                 designated_processor = self._intent_processor_pool.get_intent_processor('gpt-4o')
             else:
                 designated_processor = self._intent_processor_pool.get_intent_processor(intent_request['model'])
+
+            designated_processor.context = token_data.get("app", {})
 
             intent = intent_request['intent']
 

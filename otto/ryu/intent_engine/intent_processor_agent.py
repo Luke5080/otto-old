@@ -1,11 +1,10 @@
 from datetime import datetime
-
+from otto.ryu.network_state_db.network_state import NetworkState
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.graph import END, StateGraph
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-from exceptions import ProcessedIntentsDbException
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
 
@@ -13,17 +12,14 @@ from otto.intent_utils.model_factory import ModelFactory
 class IntentProcessor:
     def __init__(self, model, tools, system_prompt, context="User"):
         self.context = context
-        self.mongo_connector = MongoClient('localhost', 27018)
-        self.database = self.mongo_connector['intent_history']
-        self.collection = self.database['processed_intents']
         self.system = system_prompt
         self.tool_list = tools
         self.tools = {tool.name: tool for tool in tools}
         self.model = model.bind_tools(tools, tool_choice="auto")
         self.model_name = model.model_name
         self.model_factory = ModelFactory()
+        self.network_state = NetworkState.get_instance()
 
-        print(self.model_name)
         graph = StateGraph(AgentState)
         graph.add_node("understand_intent", self.understand_intent)
         graph.add_node("check_state", self.check_state)
@@ -51,22 +47,10 @@ class IntentProcessor:
         self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
 
     def save_intent(self, state: AgentState):
-        print("I AM THE ISSUE!!")
         """ Register processed intent into processed_intents_db"""
 
-        try:
-            processed_intent = {
-                "declaredBy": self.context,
-                "intent": state['messages'][0].content,
-                "outcome": state.get('operations', {}),
-                "timestamp": str(datetime.now())
-            }
+        processed_intent = self.network_state.register_processed_intent(self.context, state['messages'][0].content, state.get('operations', {}), str(datetime.now()))
 
-            self.collection.insert_one(processed_intent)
-
-        except PyMongoError as e:
-            raise ProcessedIntentsDbException(
-                f"Error while putting processed_intent into otto_processed_intents_db: {e}")
         return {'save_intent': processed_intent}
 
     def check_state(self, state: AgentState):

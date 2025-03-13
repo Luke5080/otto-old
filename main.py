@@ -38,9 +38,10 @@ def main(model: str = typer.Option(..., prompt=True),
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 
-    gm = GunicornManager.get_instance(otto_flask_api.app)
+    if not shell:
+       gm = GunicornManager.get_instance(otto_flask_api.app)
 
-    gm.run()
+       gm.run()
 
     if shell:
         OttoShell("ryu", p, controller).run()
