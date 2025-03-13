@@ -1,5 +1,7 @@
-import typer
 import multiprocessing
+
+import typer
+
 from otto.api.otto_api import OttoApi
 from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_factory import ControllerFactory
@@ -15,7 +17,6 @@ def main(model: str = typer.Option(..., prompt=True),
          controller: str = typer.Option(..., prompt=True),
          shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
-
     otto_flask_api = OttoApi.get_instance()
 
     model_fetcher = ModelFactory()
