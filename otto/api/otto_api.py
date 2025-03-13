@@ -97,6 +97,11 @@ class OttoApi:
         @self.app.route("/declare-intent", methods=['POST'])
         @validate_token
         def process_intent():
+            token = request.headers['Authorization']
+            token = token.split(" ")[1]
+
+            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
+            print(token_data['app'])
             intent_request = request.get_json()
 
             if not intent_request or 'intent' not in intent_request:
@@ -112,6 +117,8 @@ class OttoApi:
             messages = [HumanMessage(content=intent)]
 
             result = designated_processor.graph.invoke({"messages": messages})
+
+            print(result)
 
             self._intent_processor_pool.return_intent_processor(designated_processor)
 

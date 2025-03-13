@@ -39,9 +39,7 @@ def main(model: str = typer.Option(..., prompt=True),
 
     gm = GunicornManager.get_instance(otto_flask_api.app)
 
-    api_process = multiprocessing.Process(target=gm.run)
-
-    api_process.start()
+    gm.run()
 
     if shell:
         OttoShell("ryu", p, controller).run()

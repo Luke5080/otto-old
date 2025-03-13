@@ -51,6 +51,7 @@ class IntentProcessor:
         self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
 
     def save_intent(self, state: AgentState):
+        print("I AM THE ISSUE!!")
         """ Register processed intent into processed_intents_db"""
 
         try:
