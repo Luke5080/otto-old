@@ -57,6 +57,11 @@ class OttoApi:
                 return func(*args, **kwargs)
 
             return wrapped
+        @self.app.route('/test', methods=['POST'])
+        def test():
+            data = request.get_json()
+
+            return jsonify({'message': f"hello {data['name']}"})
 
         @self.app.route('/login', methods=['POST'])
         def app_login():
