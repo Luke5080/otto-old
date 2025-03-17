@@ -17,17 +17,17 @@ services:
       - "27018:27017"
     restart: always
 
-  network_application_db:
+  otto_authentication_db:
     build: .
-    container_name: otto_network_application_db
+    container_name: otto_authentication_db
     environment:
       - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=network_application_db
+      - MYSQL_DATABASE=authentication_db
     ports:
       - "3306:3306"
     volumes:
-      - "network_application_db:/var/lib/mysql"
+      - "authentication_db:/var/lib/mysql"
     restart: always
 
 volumes:
-  network_application_db:
+  authentication_db:

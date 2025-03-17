@@ -27,7 +27,7 @@ class OttoApi:
         if OttoApi.__instance is None:
             self.app = Flask(__name__)
             self._database_connection = mysql.connector.connect(
-                user='root', password='root', host='localhost', port=3306, database='network_application_db'
+                user='root', password='root', host='localhost', port=3306, database='authentication_db'
             )
             self.app.config['SECRET_KEY'] = os.urandom(16)
             self._intent_processor_pool = IntentProcessorPool()
@@ -57,47 +57,51 @@ class OttoApi:
                 return func(*args, **kwargs)
 
             return wrapped
-        @self.app.route('/test', methods=['POST'])
-        def test():
-            data = request.get_json()
-
-            return jsonify({'message': f"hello {data['name']}"})
 
         @self.app.route('/login', methods=['POST'])
         def app_login():
             login_request = request.get_json()
 
-            if not login_request or 'application-name' not in login_request or 'password' not in login_request:
+            if not login_request:
+                return jsonify(
+                    {'message': 'Empty request body. Please provide the following fields: method, username, password'}), 403
+
+            if 'method' not in login_request or login_request['method'] not in ['application', 'user']:
+                return jsonify(
+                    {'message': 'Method must be set to either application or user'}), 403
+
+            table = "network_applications" if login_request['method'] == "application" else "users"
+
+            if 'username' not in login_request or 'password' not in login_request:
                 return jsonify(
                     {'message': 'Username AND Password are required for network application authentication'}), 403
 
             cursor = self._database_connection.cursor()
 
             cursor.execute(
-                'SELECT COUNT(*) FROM network_applications WHERE app_name = %s', (login_request['application-name'],)
-
+               f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
             )
 
             result = cursor.fetchone()
 
             if result[0] == 0:
-                return jsonify({'message': f"Network application {login_request['application-name']} not found"}), 403
+                return jsonify({'message': f"{login_request['method']} {login_request['username']} not found"}), 403
 
             cursor.execute(
-                'SELECT * FROM network_applications where app_name = %s AND password = %s',
-                (login_request['application-name'], login_request['password'])
+                f"SELECT * FROM {table} where username = %s AND password = %s",
+                (login_request['username'], login_request['password'])
             )
 
             if cursor.fetchone() is not None:
                 token = jwt.encode({
-                    'app': login_request['application-name'],
+                    'app': login_request['username'],
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=3600)
                 }, self.app.config['SECRET_KEY'], algorithm='HS256')
                 return jsonify({'token': token})
 
             else:
                 return jsonify(
-                    {'message': f"Incorrect password for application {login_request['application-name']}"}), 403
+                    {'message': f"Incorrect password for {login_request['method']} {login_request['username']}"}), 403
 
         @self.app.route("/declare-intent", methods=['POST'])
         @validate_token
