@@ -8,6 +8,10 @@ import streamlit as st
 
 from otto.gui.api_handler import ApiHandler
 
+st.set_page_config(
+    page_title="Otto"
+)
+
 # will be cached until session state is cleared
 st_api_handler = ApiHandler.get_api_handler()
 
@@ -72,10 +76,6 @@ def create_top_activity_df() -> Union[pd.DataFrame, None]:
     return top_activity_df
 
 
-st.set_page_config(
-    page_title="Otto"
-)
-
 if "user_token" not in st.session_state:
     st.session_state.user_token = None
 
@@ -89,14 +89,15 @@ if st.session_state.user_token is None:
         submit = st.form_submit_button("Login")
 
     if submit:
-        authentication_response = st_api_handler.login(username, password).json()
+        authentication_response = st_api_handler.login(username, password)
 
         if authentication_response.status_code != 200:
             st.error(f"Login Failed: {authentication_response['message']}")
         else:
             placeholder.empty()
-            st.session_state.user_token = authentication_response['token']
-            st_api_handler.set_token(st.session_state.user_token)
+            print(authentication_response.json()['token'])
+            st.session_state.user_token = authentication_response.json()['token']
+            st_api_handler.set_token(authentication_response.json()['token'])
             st.rerun()
 
 if st.session_state.user_token is not None:
