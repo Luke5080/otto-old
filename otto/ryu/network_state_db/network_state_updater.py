@@ -160,12 +160,9 @@ class NetworkStateUpdater(Thread):
                 current_nw_state[document["name"]] = document
 
             diff_found = DeepDiff(self._nw_state.get_registered_state(), current_nw_state)
-            print(f"REGISTERED STATE {self._nw_state.get_registered_state()}")
-            print(f"CURRENT NW STATE {current_nw_state}")
 
             if len(diff_found) > 0:
-                print(hex(id(self._nw_state)))
-
+                
                 self._nw_state.construct_network_graph(current_nw_state)
 
                 network_state_db_updates = []

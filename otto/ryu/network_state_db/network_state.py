@@ -84,7 +84,7 @@ class NetworkState:
     def create_network_state_db(self) -> None:
         for found_switch in self.get_network_state():
             self._network_db_operator.put_switch_to_db(found_switch)
-
+        print('done')
         self.construct_network_graph(self.get_registered_state())
 
     def delete_switch_nw_state(self, switch_dpid: str) -> None:
