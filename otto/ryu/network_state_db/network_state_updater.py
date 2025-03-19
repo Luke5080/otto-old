@@ -53,7 +53,7 @@ class NetworkStateUpdater(Thread):
         for changed_key, new_value in change.items():
             changed_key = self._format_key(changed_key)
 
-            query = {"_id": self._nw_db.object_ids[changed_key.pop(0)]}
+            query = {"name": changed_key.pop(0)}
 
             update = {"$set": {".".join(changed_key): new_value['new_value']}}
 
@@ -79,7 +79,7 @@ class NetworkStateUpdater(Thread):
 
                 switch_dpid = added_item.pop(0)
 
-                query = {"_id": self._nw_db.object_ids[switch_dpid]}
+                query = {"name": switch_dpid}
 
                 update = {"$set": {".".join(added_item): glom(nw_state, full_update)}}
 
@@ -99,12 +99,12 @@ class NetworkStateUpdater(Thread):
             removed_item = self._format_key(removed_item)
 
             if len(removed_item) == 1:
-                query = {"_id": self._nw_db.object_ids[removed_item[0]]}
+                query = {"name": removed_item[0]}
 
                 updates.append(DeleteOne(query))
 
             else:
-                query = {"_id": self._nw_db.object_ids[removed_item.pop(0)]}
+                query = {"name": removed_item.pop(0)}
 
                 update = {"$unset": {".".join(removed_item): ""}}
 
@@ -125,7 +125,7 @@ class NetworkStateUpdater(Thread):
 
             del switch_document[-1]  # removes index of IP to be removed from array - don't need it with $pull
 
-            query = {"_id": self._nw_db.object_ids[switch_document.pop(0)]}
+            query = {"name": switch_document.pop(0)}
 
             update = {"$pull": {".".join(switch_document): ip}}
 
@@ -144,7 +144,7 @@ class NetworkStateUpdater(Thread):
         for switch_document, ip in new_ips.items():
             switch_document = self._format_key(switch_document)
 
-            query = {"_id": self._nw_db.object_ids[switch_document.pop(0)]}
+            query = {"name": switch_document.pop(0)}
 
             update = {"$set": {".".join(switch_document): ip}}
 

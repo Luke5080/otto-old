@@ -31,8 +31,6 @@ class NetworkDbOperator:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
 
-            self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
-            
             return inserted_doc.inserted_id
 
         except PyMongoError as e:
