@@ -18,7 +18,6 @@ class NetworkDbOperator:
         self._network_state_db = None
         self._switch_collection = None
         self.object_ids = {}
-        atexit.register(self.drop_database)
 
     def connect(self):
         if self._MongoConnector is None:

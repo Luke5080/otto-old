@@ -14,31 +14,27 @@ class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
 
-    __instance = None
-
-    @staticmethod
-    def get_instance():
-        if OttoApi.__instance is None:
-            OttoApi()
-        return OttoApi.__instance
-
     def __init__(self):
-        if OttoApi.__instance is None:
             self.app = Flask(__name__)
             self._database_connection = mysql.connector.connect(
                 user='root', password='root', host='localhost', port=3306, database='authentication_db'
             ) # needs to change
             self.app.config['SECRET_KEY'] = os.urandom(16)
             self._processed_intents_db_conn = ProcessedIntentsDbOperator()
-            self._processed_intents_db_conn.connect()
             self._intent_processor_pool = IntentProcessorPool() # check
             self._create_routes()
 
-            OttoApi.__instance = self
-        else:
-            raise MultipleFlaskApiException(f"An occurrence of OttoApi already exists at  {OttoApi.__instance}")
-
     def _create_routes(self):
+        @self.app.before_request
+        def initialize_db_connections():
+            # Ensure a fresh MySQL connection per worker
+            if self._database_connection is None:
+                self._database_connection = mysql.connector.connect(
+                    user='root', password='root', host='localhost', port=3306, database='authentication_db'
+                )
+
+            self._processed_intents_db_conn.connect()
+
         def validate_token(func):
             @wraps(func)
             def wrapped(*args, **kwargs):
@@ -55,6 +51,8 @@ class OttoApi:
                     print(e)
                     return jsonify({'message': 'Invalid token'}), 403
                 return func(*args, **kwargs)
+
+            return wrapped
 
             return wrapped
 
@@ -171,4 +169,5 @@ class OttoApi:
             return jsonify({'message': response})
 
     def run(self):
+        self._processed_intents_db_conn.connect()
         self.app.run()

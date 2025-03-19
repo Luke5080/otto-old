@@ -213,4 +213,4 @@ def modify_all_matching_rules(switch_id: str, table_id: int, match: dict, action
 def create_tool_list(extra_funcs=None) -> list:
     return [get_nw_state, add_rule, delete_rule_strict,
             modify_rule_strict, modify_all_matching_rules,
-            check_switch, get_path_between_nodes]
+            check_switch]

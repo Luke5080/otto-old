@@ -28,7 +28,7 @@ def main(model: str = typer.Option(..., prompt=True),
     controller_env.create_network_state()
     controller_env.start_state_updater()
 
-    otto_flask_api = OttoApi.get_instance()
+    otto_flask_api = OttoApi()
 
     model_fetcher = ModelFactory()
 
@@ -43,7 +43,7 @@ def main(model: str = typer.Option(..., prompt=True),
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 
     if not shell:
-       gm = GunicornManager.get_instance(otto_flask_api.app)
+       gm = GunicornManager(otto_flask_api.app)
 
        gm.run()
 
