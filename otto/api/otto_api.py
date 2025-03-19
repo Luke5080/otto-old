@@ -16,9 +16,7 @@ class OttoApi:
 
     def __init__(self):
             self.app = Flask(__name__)
-            self._database_connection = mysql.connector.connect(
-                user='root', password='root', host='localhost', port=3306, database='authentication_db'
-            ) # needs to change
+            self._database_connection = None
             self.app.config['SECRET_KEY'] = os.urandom(16)
             self._processed_intents_db_conn = ProcessedIntentsDbOperator()
             self._intent_processor_pool = IntentProcessorPool() # check
@@ -120,7 +118,7 @@ class OttoApi:
                 designated_processor = self._intent_processor_pool.get_intent_processor(intent_request['model'])
 
             designated_processor.context = token_data.get("app", {})
-
+            designated_processor.connect_to_db()
             intent = intent_request['intent']
 
             messages = [HumanMessage(content=intent)]
@@ -169,5 +167,4 @@ class OttoApi:
             return jsonify({'message': response})
 
     def run(self):
-        self._processed_intents_db_conn.connect()
         self.app.run()

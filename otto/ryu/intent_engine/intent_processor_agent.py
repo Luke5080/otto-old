@@ -19,8 +19,6 @@ class IntentProcessor:
         self.model_factory = ModelFactory()
         self.processed_intents_db_conn = ProcessedIntentsDbOperator()
 
-        self.processed_intents_db_conn.connect()
-
         graph = StateGraph(AgentState)
         graph.add_node("understand_intent", self.understand_intent)
         graph.add_node("check_state", self.check_state)
@@ -41,6 +39,8 @@ class IntentProcessor:
         graph.add_edge("save_intent", END)
 
         self.graph = graph.compile()
+    def connect_to_db(self):
+        self.processed_intents_db_conn.connect()
 
     def change_model(self, model):
         """Change the language model used by IntentProcessor"""
