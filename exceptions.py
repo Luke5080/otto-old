@@ -41,3 +41,9 @@ class MultipleFlaskApiException(Exception):
 
 class MultipleGunicornManager(Exception):
     pass
+
+class AuthenticationError(Exception):
+    pass
+
+class ApiRequestError(Exception):
+    pass

@@ -1,12 +1,11 @@
 from datetime import datetime
-from otto.ryu.network_state_db.network_state import NetworkState
+
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.graph import END, StateGraph
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
 
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
+from otto.ryu.network_state_db.network_state import NetworkState
 
 
 class IntentProcessor:
@@ -49,7 +48,10 @@ class IntentProcessor:
     def save_intent(self, state: AgentState):
         """ Register processed intent into processed_intents_db"""
 
-        processed_intent = self.network_state.register_processed_intent(context=self.context, intent=state['messages'][0].content, outcome=state.get('operations', {}), timestamp=datetime.now())
+        processed_intent = self.network_state.register_processed_intent(context=self.context,
+                                                                        intent=state['messages'][0].content,
+                                                                        outcome=state.get('operations', {}),
+                                                                        timestamp=datetime.now())
 
         return {'save_intent': processed_intent}
 

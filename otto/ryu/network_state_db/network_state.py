@@ -5,6 +5,7 @@ from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
+
 class NetworkState:
     _network_db_operator: NetworkDbOperator
     _nw_state_finder: NetworkStateFinder
@@ -101,14 +102,14 @@ class NetworkState:
         return self._network_db_operator.dump_network_db()
 
     def register_processed_intent(self, context, intent, outcome, timestamp) -> dict:
-        return self._processed_intents_db_operator.save_intent(intent, context, outcome, timestamp) # weird wrapper to the original method
+        return self._processed_intents_db_operator.save_intent(intent, context, outcome,
+                                                               timestamp)  # weird wrapper to the original method
 
     def get_processed_intents(self):
         return self._processed_intents_db_operator.get_latest_activity()
 
     def get_weekly_activity(self):
         return self._processed_intents_db_operator.get_weekly_activity()
-
 
     def get_top_activity(self):
         return self._processed_intents_db_operator.get_top_activity()
