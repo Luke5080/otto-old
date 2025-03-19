@@ -1,41 +1,31 @@
 import atexit
+from typing import Union
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-from exceptions import (MultipleNetworkDbOperators, NetworkDatabaseException,
+from exceptions import (NetworkDatabaseException,
                         SwitchDocumentNotFound)
 
 
 class NetworkDbOperator:
-    _MongoConnector: MongoClient
+    _MongoConnector: Union[None, MongoClient]
     object_ids: dict
 
-    __instance = None
-
-    @staticmethod
-    def get_instance():
-        if NetworkDbOperator.__instance is None:
-            NetworkDbOperator()
-        return NetworkDbOperator.__instance
-
     def __init__(self):
-        if NetworkDbOperator.__instance is None:
-            self._MongoConnector = MongoClient('localhost', 27017)
+        self._MongoConnector = None
 
-            if 'topology' in self._MongoConnector.list_database_names():
-                self.drop_database()
+        self._network_state_db = None
+        self._switch_collection = None
+        self.object_ids = {}
+        atexit.register(self.drop_database)
+
+    def connect(self):
+        if self._MongoConnector is None:
+            self._MongoConnector = MongoClient('localhost', 27017)
 
             self._network_state_db = self._MongoConnector["topology"]
             self._switch_collection = self._network_state_db["switches"]
-            self.object_ids = {}
-            atexit.register(self.drop_database)
-            NetworkDbOperator.__instance = self
-
-        else:
-            raise MultipleNetworkDbOperators(
-                f"An instance of NetworkDbOperator already exists at {NetworkDbOperator.__instance}"
-            )
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:

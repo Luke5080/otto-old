@@ -6,14 +6,14 @@ import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage
-from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 from exceptions import MultipleFlaskApiException
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 
 class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
-    _network_state: NetworkState
+
     __instance = None
 
     @staticmethod
@@ -27,10 +27,11 @@ class OttoApi:
             self.app = Flask(__name__)
             self._database_connection = mysql.connector.connect(
                 user='root', password='root', host='localhost', port=3306, database='authentication_db'
-            )
+            ) # needs to change
             self.app.config['SECRET_KEY'] = os.urandom(16)
-            self._intent_processor_pool = IntentProcessorPool()
-            self._network_state = NetworkState.get_instance()
+            self._processed_intents_db_conn = ProcessedIntentsDbOperator()
+            self._processed_intents_db_conn.connect()
+            self._intent_processor_pool = IntentProcessorPool() # check
             self._create_routes()
 
             OttoApi.__instance = self
@@ -141,7 +142,7 @@ class OttoApi:
 
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
-            response = self._network_state.get_processed_intents()
+            response = self._processed_intents_db_conn.get_latest_activity()
 
             return jsonify({'message': response})
 
@@ -153,7 +154,7 @@ class OttoApi:
 
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
-            response = self._network_state.get_weekly_activity()
+            response = self._processed_intents_db_conn.get_weekly_activity()
 
             return jsonify({'message': response})
 
@@ -165,7 +166,7 @@ class OttoApi:
 
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
-            response = self._network_state.get_top_activity()
+            response = self._processed_intents_db_conn.get_top_activity()
 
             return jsonify({'message': response})
 

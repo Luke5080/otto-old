@@ -48,6 +48,7 @@ class ApiHandler:
 
         self._authentication_token = token
         self._request_headers['Authorization'] = f"Bearer {self._authentication_token}"
+
     def get_latest_activity(self) -> dict:
         """
         Method to retrieve the latest activity data from the /latest-activity API. Returns the last 5 documents

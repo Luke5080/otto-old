@@ -5,7 +5,7 @@ from langgraph.graph import END, StateGraph
 
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
-from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
 
 class IntentProcessor:
@@ -17,7 +17,9 @@ class IntentProcessor:
         self.model = model.bind_tools(tools, tool_choice="auto")
         self.model_name = model.model_name
         self.model_factory = ModelFactory()
-        self.network_state = NetworkState.get_instance()
+        self.processed_intents_db_conn = ProcessedIntentsDbOperator()
+
+        self.processed_intents_db_conn.connect()
 
         graph = StateGraph(AgentState)
         graph.add_node("understand_intent", self.understand_intent)
@@ -48,10 +50,10 @@ class IntentProcessor:
     def save_intent(self, state: AgentState):
         """ Register processed intent into processed_intents_db"""
 
-        processed_intent = self.network_state.register_processed_intent(context=self.context,
-                                                                        intent=state['messages'][0].content,
-                                                                        outcome=state.get('operations', {}),
-                                                                        timestamp=datetime.now())
+        processed_intent = self.processed_intents_db_conn.save_intent(context=self.context,
+                                                                      intent=state['messages'][0].content,
+                                                                      operations=state.get('operations', {}),
+                                                                      timestamp=datetime.now())
 
         return {'save_intent': processed_intent}
 

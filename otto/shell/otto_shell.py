@@ -23,7 +23,6 @@ class OttoShell(cmd.Cmd):
     _controller: str = None
     _agent: IntentProcessor
     _verbosity_level: str
-    _network_state: NetworkState
     _create_app_arg_parser: argparse.ArgumentParser
 
     def __init__(self, controller, agent, controller_object):
@@ -35,7 +34,7 @@ class OttoShell(cmd.Cmd):
         self._verbosity_level = "VERBOSE"
         self._controller_object = controller_object
         self._console = Console()
-        self._network_state = NetworkState.get_instance()
+
         atexit.register(self._close_network_app_db_connection)
         self._create_app_arg_parser = argparse.ArgumentParser(prog="Create a network application",
                                                               description="Add app")
@@ -43,7 +42,7 @@ class OttoShell(cmd.Cmd):
         self._create_app_arg_parser.add_argument('--password', required=True, help="password")
         self._database_connection = mysql.connector.connect(
             user='root', password='root', host='localhost', port=3306, database='authentication_db'
-        )
+        ) # change this
 
         self.prompt = "otto> "
 
@@ -62,8 +61,8 @@ class OttoShell(cmd.Cmd):
 
     def do_get_hosts(self, line):
         host_table = PrettyTable()
-        host_table_columns = list(self._network_state.host_mappings)
-        for switch, port_mapping in self._network_state.host_mappings.items():
+        host_table_columns = list(self._controller_object.network_state.host_mappings)
+        for switch, port_mapping in self._controller_object.network_state.host_mappings.items():
             connected_hosts = [f"{port}:{host}" for port, host in port_mapping.items()]
 
             host_table.add_column(host_table_columns[host_table_columns.index(switch)], connected_hosts)

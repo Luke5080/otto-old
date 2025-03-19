@@ -17,10 +17,20 @@ def main(model: str = typer.Option(..., prompt=True),
          controller: str = typer.Option(..., prompt=True),
          shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
+
+    # create controller factory to return our controller object
+    controller_fetcher = ControllerFactory()
+
+    # get our controller object
+    controller = controller_fetcher.get_controller("ryu")
+
+    # create our associated network state for our controller and start its updates.
+    controller.create_network_state()
+    controller.start_state_updater()
+
     otto_flask_api = OttoApi.get_instance()
 
     model_fetcher = ModelFactory()
-    controller_fetcher = ControllerFactory()
 
     if controller not in ["ryu", "onos"]:
         return
@@ -28,13 +38,7 @@ def main(model: str = typer.Option(..., prompt=True),
     if model not in ["gpt-4o", "gpt-o3-mini", "gpt-4o-mini", "llama", "deepseek", "gemini"]:
         return
 
-    controller = controller_fetcher.get_controller("ryu")
-
     llm = model_fetcher.get_model(model)
-
-    controller.create_network_state()
-
-    controller.start_state_updater()
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 

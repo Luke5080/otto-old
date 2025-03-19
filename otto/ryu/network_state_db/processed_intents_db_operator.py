@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Union
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
@@ -7,25 +8,19 @@ from exceptions import ProcessedIntentsDbException
 
 
 class ProcessedIntentsDbOperator:
-    __instance = None
-
-    @staticmethod
-    def get_instance():
-        if ProcessedIntentsDbOperator.__instance is None:
-            ProcessedIntentsDbOperator()
-        return ProcessedIntentsDbOperator.__instance
+    mongo_connector: Union[None, MongoClient]
 
     def __init__(self):
-        if ProcessedIntentsDbOperator.__instance is None:
+        self.mongo_connector = None
+        self.database = None
+        self.collection = None
+
+    def connect(self):
+        if self.mongo_connector is None:
             self.mongo_connector = MongoClient('localhost', 27018)
+
             self.database = self.mongo_connector['intent_history']
             self.collection = self.database['processed_intents']
-
-            ProcessedIntentsDbOperator.__instance = self
-
-        else:
-            raise Exception(
-                f"An occurence of ProcessedIntentsDbOperator exists at {ProcessedIntentsDbOperator.__instance}")
 
     def save_intent(self, intent: str, context: str, operations: list[str], timestamp) -> dict:
         processed_intent = {
@@ -46,12 +41,6 @@ class ProcessedIntentsDbOperator:
         return processed_intent
 
     def get_latest_activity(self) -> dict:
-        timestamp = datetime.now() - timedelta(hours=24)
-        """
-        query = {
-              '$expr': { '$gt': ["$timestamp", timestamp] }
-        }
-        """
         try:
 
             latest_data = self.collection.find().sort('_id', -1).limit(5)

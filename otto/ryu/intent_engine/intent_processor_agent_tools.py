@@ -2,6 +2,7 @@ import networkx as nx
 import requests
 from langchain_core.tools import tool
 
+from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state import NetworkState
 
 
@@ -10,8 +11,9 @@ def get_nw_state() -> dict:
     """
     Function to get the current entire network state
     """
-    network_state = NetworkState.get_instance()
-    return network_state.get_registered_state()
+    network_db = NetworkDbOperator()
+    network_db.connect()
+    return network_db.dump_network_db()
 
 
 @tool
@@ -21,9 +23,8 @@ def check_switch(switch_id: str) -> dict:
     Args:
         switch_id: ID of the switch (in decimal)
     """
-    network_state = NetworkState.get_instance()
+    network_state = NetworkState()
     return network_state[switch_id]
-
 
 @tool
 def get_path_between_nodes(source: str, destination: str) -> list[tuple[str, str]]:

@@ -15,7 +15,9 @@ class NetworkStateUpdater(Thread):
     def __init__(self):
         super().__init__()
         self._nw_state = NetworkState.get_instance()
-        self._nw_db = NetworkDbOperator.get_instance()
+        self._nw_db = NetworkDbOperator()
+        self._nw_db.connect()
+
         self.stop_event = Event()
 
     @staticmethod
