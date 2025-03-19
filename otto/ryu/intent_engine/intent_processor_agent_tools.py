@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state import NetworkState
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 
 @tool
@@ -23,8 +24,19 @@ def check_switch(switch_id: str) -> dict:
     Args:
         switch_id: ID of the switch (in decimal)
     """
-    network_state = NetworkState()
-    return network_state[switch_id]
+
+    nw_state_finder = NetworkStateFinder()
+    switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
+
+    switch_struct = {
+        "name": switch_hex_dpid,
+        "ports": nw_state_finder.get_ports(switch_hex_dpid),
+        "portMappings": nw_state_finder.get_port_mappings(switch_hex_dpid),
+        "connectedHosts": nw_state_finder.get_connected_hosts(switch_hex_dpid),
+        "installedFlows": nw_state_finder.get_installed_flows(switch_id)
+    }
+
+    return switch_struct
 
 @tool
 def get_path_between_nodes(source: str, destination: str) -> list[tuple[str, str]]:

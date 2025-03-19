@@ -5,16 +5,15 @@ from glom import glom
 from pymongo import DeleteOne, InsertOne, UpdateOne
 
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-from otto.ryu.network_state_db.network_state import NetworkState
+
 
 
 class NetworkStateUpdater(Thread):
-    _nw_state: NetworkState
     _nw_db: NetworkDbOperator
 
-    def __init__(self):
+    def __init__(self, nw_state):
         super().__init__()
-        self._nw_state = NetworkState.get_instance()
+        self._nw_state = nw_state
         self._nw_db = NetworkDbOperator()
         self._nw_db.connect()
 

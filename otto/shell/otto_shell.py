@@ -12,7 +12,6 @@ from rich.markdown import Markdown
 from yaspin import yaspin
 
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
-from otto.ryu.network_state_db.network_state import NetworkState
 from otto.ryu.ryu_environment import RyuEnvironment
 
 
