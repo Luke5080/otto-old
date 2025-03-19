@@ -103,6 +103,16 @@ class NetworkState:
     def register_processed_intent(self, context, intent, outcome, timestamp) -> dict:
         return self._processed_intents_db_operator.save_intent(intent, context, outcome, timestamp) # weird wrapper to the original method
 
+    def get_processed_intents(self):
+        return self._processed_intents_db_operator.get_latest_activity()
+
+    def get_weekly_activity(self):
+        return self._processed_intents_db_operator.get_weekly_activity()
+
+
+    def get_top_activity(self):
+        return self._processed_intents_db_operator.get_top_activity()
+
     def __repr__(self):
         ...
 

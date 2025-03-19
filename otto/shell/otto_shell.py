@@ -42,7 +42,7 @@ class OttoShell(cmd.Cmd):
         self._create_app_arg_parser.add_argument('--name', required=True, help="app name")
         self._create_app_arg_parser.add_argument('--password', required=True, help="password")
         self._database_connection = mysql.connector.connect(
-            user='root', password='root', host='localhost', port=3306, database='network_application_db'
+            user='root', password='root', host='localhost', port=3306, database='authentication_db'
         )
 
         self.prompt = "otto> "

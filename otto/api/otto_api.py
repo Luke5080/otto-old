@@ -6,15 +6,14 @@ import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage
-
+from otto.ryu.network_state_db.network_state import NetworkState
 from exceptions import MultipleFlaskApiException
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
-
 
 class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
-
+    _network_state: NetworkState
     __instance = None
 
     @staticmethod
@@ -31,7 +30,7 @@ class OttoApi:
             )
             self.app.config['SECRET_KEY'] = os.urandom(16)
             self._intent_processor_pool = IntentProcessorPool()
-
+            self._network_state = NetworkState.get_instance()
             self._create_routes()
 
             OttoApi.__instance = self
@@ -129,11 +128,46 @@ class OttoApi:
 
             result = designated_processor.graph.invoke({"messages": messages})
 
-            print(result)
-
             self._intent_processor_pool.return_intent_processor(designated_processor)
 
             return jsonify({'message': result['operations']})
+
+
+        @self.app.route('/latest-activity', methods=['GET'])
+        @validate_token
+        def get_latest_activity():
+            token = request.headers['Authorization']
+            token = token.split(" ")[1]
+
+            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
+
+            response = self._network_state.get_processed_intents()
+
+            return jsonify({'message': response})
+
+        @self.app.route('/weekly-activity', methods=['GET'])
+        @validate_token
+        def get_weekly_activity():
+            token = request.headers['Authorization']
+            token = token.split(" ")[1]
+
+            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
+
+            response = self._network_state.get_weekly_activity()
+
+            return jsonify({'message': response})
+
+        @self.app.route('/top-activity', methods=['GET'])
+        @validate_token
+        def get_top_activity():
+            token = request.headers['Authorization']
+            token = token.split(" ")[1]
+
+            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
+
+            response = self._network_state.get_top_activity()
+
+            return jsonify({'message': response})
 
     def run(self):
         self.app.run()

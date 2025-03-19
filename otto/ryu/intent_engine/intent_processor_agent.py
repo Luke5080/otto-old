@@ -49,7 +49,7 @@ class IntentProcessor:
     def save_intent(self, state: AgentState):
         """ Register processed intent into processed_intents_db"""
 
-        processed_intent = self.network_state.register_processed_intent(self.context, state['messages'][0].content, state.get('operations', {}), str(datetime.now()))
+        processed_intent = self.network_state.register_processed_intent(context=self.context, intent=state['messages'][0].content, outcome=state.get('operations', {}), timestamp=datetime.now())
 
         return {'save_intent': processed_intent}
 
