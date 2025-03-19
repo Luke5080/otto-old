@@ -10,28 +10,15 @@ class NetworkState:
     _nw_state_finder: NetworkStateFinder
     network_graph: nx.Graph
 
-    __instance = None
-
-    @staticmethod
-    def get_instance():
-        if NetworkState.__instance is None:
-            NetworkState()
-        return NetworkState.__instance
 
     def __init__(self):
-        if self.__instance is None:
-            self._network_db_operator = NetworkDbOperator()
-            self._network_db_operator.connect()
+        self._network_db_operator = NetworkDbOperator()
+        self._network_db_operator.connect()
 
-            self._nw_state_finder = NetworkStateFinder()
-            self.network_graph = nx.Graph()
-            self.switch_port_mappings = {}
-            self.host_mappings = {}
-
-            NetworkState.__instance = self
-
-        else:
-            raise MultipleNetworkStateInstances(f"An occurrence of Network State already exists at {self.__instance}")
+        self._nw_state_finder = NetworkStateFinder()
+        self.network_graph = nx.Graph()
+        self.switch_port_mappings = {}
+        self.host_mappings = {}
 
     def get_switch_details(self, switch_id: str) -> dict:
         switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
