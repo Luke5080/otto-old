@@ -1,3 +1,5 @@
+import pyfiglet
+from colorama import Fore
 import argparse
 import atexit
 import cmd
@@ -26,9 +28,12 @@ class OttoShell(cmd.Cmd):
 
     def __init__(self, controller, agent, controller_object):
         super().__init__()
+        self.banner = pyfiglet.figlet_format('OTTO',font= 'dos_rebel')
+
         self.available_models = ["gpt-4o", "gpt-4o-mini", "llama", "deepseek", "gemini", "gpt-o3-mini"]
         self._controller = controller
         self._agent = agent
+        self._agent.connect_to_db()
         self._model = agent.model.model_name
         self._verbosity_level = "VERBOSE"
         self._controller_object = controller_object
@@ -46,7 +51,8 @@ class OttoShell(cmd.Cmd):
         self.prompt = "otto> "
 
         self.intro = f"""
-        Otto - Intent Based Northbound Interface for SDN Controllers
+   
+        {Fore.CYAN + self.banner + Fore.RESET}
         Author: Luke Marshall
 
         Configured model: {self._model}

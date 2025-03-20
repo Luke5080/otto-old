@@ -60,6 +60,7 @@ class IntentProcessor:
     def check_state(self, state: AgentState):
         """Get current network state"""
         current_state = self.tools["get_nw_state"].invoke({})
+
         return {
             'messages': [
                 SystemMessage(content=f"Current Network State:\n{current_state}")
@@ -79,6 +80,7 @@ class IntentProcessor:
 
     def reason_intent(self, state: AgentState):
         """LLM decides next action based on intent and state"""
+
         messages = state['messages']
 
         messages = [SystemMessage(content=self.system)] + messages
@@ -102,12 +104,20 @@ class IntentProcessor:
         for t in tool_calls:
             try:
                 tool = self.tools.get(t['name'])
-                result = tool.invoke(t['args']) if tool else "Invalid tool"
-                results.append(ToolMessage(
-                    tool_call_id=t['id'],
-                    name=t['name'],
-                    content=str(result)
-                ))
+                if tool != "get_path_between_nodes":
+                     result = tool.invoke(t['args']) if tool else "Invalid tool"
+                     results.append(ToolMessage(
+                       tool_call_id=t['id'],
+                       name=t['name'],
+                       content=str(result)
+                       ))
+                else:
+                     result = tool.invoke(t['args', state.get('network_state', {})])
+                     results.append(ToolMessage(
+                       tool_call_id=t['id'],
+                       name=t['name'],
+                       content=str(result)
+                       ))
 
                 operations.append(t['name'])
 

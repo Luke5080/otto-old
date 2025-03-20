@@ -34,7 +34,6 @@ class NetworkStateUpdater(Thread):
 
         Appropriate method can now use ".".join(...) to use the returned value in a pymongo query.
         """
-        print(key_path)
         key_path = key_path.replace("root", "").replace("[", "").replace("]", ",").replace("'", "")
         key_path = key_path.split(",")
 
@@ -64,7 +63,6 @@ class NetworkStateUpdater(Thread):
         either adding an entire new switch document OR adding a new key to a switch document
         """
         updates = []
-        print(added_value)
         for added_item in added_value:
             added_item = self._format_key(added_item)
 
@@ -91,7 +89,6 @@ class NetworkStateUpdater(Thread):
         """
 
         updates = []
-        print(removed_value)
 
         for removed_item in removed_value:
             removed_item = self._format_key(removed_item)
@@ -163,20 +160,19 @@ class NetworkStateUpdater(Thread):
                 network_state_db_updates = []
 
                 if "values_changed" in diff_found:
-                    network_state_db_updates.append(self._update_value(diff_found['values_changed']))
+                    network_state_db_updates += self._update_value(diff_found['values_changed'])
 
                 if "dictionary_item_added" in diff_found:
-                    network_state_db_updates.append(
-                        self._add_value(diff_found['dictionary_item_added'], current_nw_state))
+                    network_state_db_updates += self._add_value(diff_found['dictionary_item_added'], current_nw_state)
 
                 if "dictionary_item_removed" in diff_found:
-                    network_state_db_updates.append(self._remove_value(diff_found['dictionary_item_removed']))
+                    network_state_db_updates += self._remove_value(diff_found['dictionary_item_removed'])
 
                 if "iterable_item_added" in diff_found:
-                    network_state_db_updates.append(self._add_ip(diff_found['iterable_item_added']))
+                    network_state_db_updates += self._add_ip(diff_found['iterable_item_added'])
 
                 if "iterable_item_removed" in diff_found:
-                    network_state_db_updates.append(self._remove_ip(diff_found['iterable_item_removed']))
+                    network_state_db_updates += self._remove_ip(diff_found['iterable_item_removed'])
 
                 if network_state_db_updates:
                     self._nw_db.bulk_update(network_state_db_updates)
