@@ -41,7 +41,7 @@ class ApiHandler:
     def set_token(self, token: str) -> None:
         """
         Args:
-             token: str
+             token: str - JWT token for user authentication
 
         Method to set token attribute to the authentication token obtained through login
         """

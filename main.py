@@ -1,5 +1,3 @@
-import multiprocessing
-
 import typer
 
 from otto.api.otto_api import OttoApi
@@ -17,7 +15,6 @@ def main(model: str = typer.Option(..., prompt=True),
          controller: str = typer.Option(..., prompt=True),
          shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
-
     # create controller factory to return our controller object
     controller_fetcher = ControllerFactory()
 
@@ -43,9 +40,9 @@ def main(model: str = typer.Option(..., prompt=True),
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 
     if not shell:
-       gm = GunicornManager(otto_flask_api.app)
+        gm = GunicornManager(otto_flask_api.app)
 
-       gm.run()
+        gm.run()
 
     if shell:
         OttoShell("ryu", p, controller_env).run()

@@ -1,9 +1,7 @@
-import networkx as nx
 import requests
 from langchain_core.tools import tool
 
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-from otto.ryu.network_state_db.network_state import NetworkState
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 
@@ -26,17 +24,8 @@ def check_switch(switch_id: str) -> dict:
     """
 
     nw_state_finder = NetworkStateFinder()
-    switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
+    return nw_state_finder.get_switch_details()
 
-    switch_struct = {
-        "name": switch_hex_dpid,
-        "ports": nw_state_finder.get_ports(switch_hex_dpid),
-        "portMappings": nw_state_finder.get_port_mappings(switch_hex_dpid),
-        "connectedHosts": nw_state_finder.get_connected_hosts(switch_hex_dpid),
-        "installedFlows": nw_state_finder.get_installed_flows(switch_id)
-    }
-
-    return switch_struct
 
 """
 @tool
@@ -68,6 +57,7 @@ def get_path_between_nodes(source: str, destination: str) -> list[tuple[str, str
 
     return full_path
 """
+
 
 @tool
 def add_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int = 32768) -> int:

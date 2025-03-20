@@ -1,4 +1,3 @@
-import atexit
 from typing import Union
 
 from pymongo import MongoClient
@@ -10,14 +9,11 @@ from exceptions import (NetworkDatabaseException,
 
 class NetworkDbOperator:
     _MongoConnector: Union[None, MongoClient]
-    object_ids: dict
 
     def __init__(self):
         self._MongoConnector = None
-
         self._network_state_db = None
         self._switch_collection = None
-        self.object_ids = {}
 
     def connect(self):
         if self._MongoConnector is None:

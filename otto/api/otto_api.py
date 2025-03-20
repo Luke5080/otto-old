@@ -6,26 +6,29 @@ import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage
-from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
-from exceptions import MultipleFlaskApiException
+
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
+from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
+
 
 class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
 
     def __init__(self):
-            self.app = Flask(__name__)
-            self._database_connection = None
-            self.app.config['SECRET_KEY'] = os.urandom(16)
-            self._processed_intents_db_conn = ProcessedIntentsDbOperator()
-            self._intent_processor_pool = IntentProcessorPool() # check
-            self._create_routes()
+        self.app = Flask(__name__)
+        self._database_connection = None
+        self.app.config['SECRET_KEY'] = os.urandom(16)
+        self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database
+        self._intent_processor_pool = IntentProcessorPool()
+        self._create_routes()
 
     def _create_routes(self):
         @self.app.before_request
         def initialize_db_connections():
-            # Ensure a fresh MySQL connection per worker
+            """
+            Setup necessary connections to databases before handling requests
+            """
             if self._database_connection is None:
                 self._database_connection = mysql.connector.connect(
                     user='root', password='root', host='localhost', port=3306, database='authentication_db'
@@ -34,6 +37,10 @@ class OttoApi:
             self._processed_intents_db_conn.connect()
 
         def validate_token(func):
+            """
+            Function to valid JWT token passed in each request after /login
+            """
+
             @wraps(func)
             def wrapped(*args, **kwargs):
                 token = request.headers['Authorization']
@@ -52,15 +59,14 @@ class OttoApi:
 
             return wrapped
 
-            return wrapped
-
         @self.app.route('/login', methods=['POST'])
         def app_login():
             login_request = request.get_json()
 
             if not login_request:
                 return jsonify(
-                    {'message': 'Empty request body. Please provide the following fields: method, username, password'}), 403
+                    {
+                        'message': 'Empty request body. Please provide the following fields: method, username, password'}), 403
 
             if 'method' not in login_request or login_request['method'] not in ['application', 'user']:
                 return jsonify(
@@ -75,7 +81,7 @@ class OttoApi:
             cursor = self._database_connection.cursor()
 
             cursor.execute(
-               f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
+                f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
             )
 
             result = cursor.fetchone()
@@ -118,7 +124,9 @@ class OttoApi:
                 designated_processor = self._intent_processor_pool.get_intent_processor(intent_request['model'])
 
             designated_processor.context = token_data.get("app", {})
+
             designated_processor.connect_to_db()
+
             intent = intent_request['intent']
 
             messages = [HumanMessage(content=intent)]
@@ -129,14 +137,9 @@ class OttoApi:
 
             return jsonify({'message': result['operations']})
 
-
         @self.app.route('/latest-activity', methods=['GET'])
         @validate_token
         def get_latest_activity():
-            token = request.headers['Authorization']
-            token = token.split(" ")[1]
-
-            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
             response = self._processed_intents_db_conn.get_latest_activity()
 
@@ -145,10 +148,6 @@ class OttoApi:
         @self.app.route('/weekly-activity', methods=['GET'])
         @validate_token
         def get_weekly_activity():
-            token = request.headers['Authorization']
-            token = token.split(" ")[1]
-
-            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
             response = self._processed_intents_db_conn.get_weekly_activity()
 
@@ -157,10 +156,6 @@ class OttoApi:
         @self.app.route('/top-activity', methods=['GET'])
         @validate_token
         def get_top_activity():
-            token = request.headers['Authorization']
-            token = token.split(" ")[1]
-
-            token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
             response = self._processed_intents_db_conn.get_top_activity()
 

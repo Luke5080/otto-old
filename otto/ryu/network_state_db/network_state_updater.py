@@ -7,7 +7,6 @@ from pymongo import DeleteOne, InsertOne, UpdateOne
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 
 
-
 class NetworkStateUpdater(Thread):
     _nw_db: NetworkDbOperator
 
@@ -47,7 +46,6 @@ class NetworkStateUpdater(Thread):
         """
         Updates a specific value of a switch document
         """
-        print(change)
         updates = []
 
         for changed_key, new_value in change.items():
@@ -116,7 +114,6 @@ class NetworkStateUpdater(Thread):
         """
         Removes an IP from a switch document's connectHosts.[interface].ipv4 array
         """
-        print(old_ips)
         updates = []
 
         # {"root['0000000000000001']['connectedHosts']['s1-eth1']['ipv4'][1]": '10.1.1.2'}}
@@ -137,7 +134,6 @@ class NetworkStateUpdater(Thread):
         """
         Removes an IP from a switch document's connectHosts.[interface].ipv4 array
         """
-        print(new_ips)
         updates = []
 
         # {0000000000000002','connectedHosts','s2-eth1','ipv4',0": '10.1.1.2'},
@@ -160,28 +156,29 @@ class NetworkStateUpdater(Thread):
 
             diff_found = DeepDiff(self._nw_state.get_registered_state(), current_nw_state)
 
-            if len(diff_found) > 0:
-                
+            if diff_found:
+
                 self._nw_state.construct_network_graph(current_nw_state)
 
                 network_state_db_updates = []
 
                 if "values_changed" in diff_found:
-                    network_state_db_updates += self._update_value(diff_found['values_changed'])
+                    network_state_db_updates.append(self._update_value(diff_found['values_changed']))
 
                 if "dictionary_item_added" in diff_found:
-                    network_state_db_updates += self._add_value(diff_found['dictionary_item_added'], current_nw_state)
+                    network_state_db_updates.append(
+                        self._add_value(diff_found['dictionary_item_added'], current_nw_state))
 
                 if "dictionary_item_removed" in diff_found:
-                    network_state_db_updates += self._remove_value(diff_found['dictionary_item_removed'])
+                    network_state_db_updates.append(self._remove_value(diff_found['dictionary_item_removed']))
 
                 if "iterable_item_added" in diff_found:
-                    network_state_db_updates += self._add_ip(diff_found['iterable_item_added'])
+                    network_state_db_updates.append(self._add_ip(diff_found['iterable_item_added']))
 
                 if "iterable_item_removed" in diff_found:
-                    network_state_db_updates += self._remove_ip(diff_found['iterable_item_removed'])
+                    network_state_db_updates.append(self._remove_ip(diff_found['iterable_item_removed']))
 
-                if len(network_state_db_updates) > 0:
+                if network_state_db_updates:
                     self._nw_db.bulk_update(network_state_db_updates)
 
             self.stop_event.wait(60)
