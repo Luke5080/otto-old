@@ -14,7 +14,8 @@ class GunicornManager(BaseApplication):
             self.port = 5000
             self.options = {
                 "bind": f"{self.host}:{self.port}",
-                "workers": multiprocessing.cpu_count() * 2,  # maybe an overshoot
+                "workers": multiprocessing.cpu_count() * 2,# maybe an overshoot
+                "worker_class": "eventlet",
                 "timeout": 180
             }
 

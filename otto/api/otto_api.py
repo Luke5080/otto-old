@@ -5,6 +5,7 @@ from functools import wraps
 import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
+from flask_socketio import SocketIO, emit
 from langchain_core.messages import HumanMessage
 
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
@@ -21,6 +22,8 @@ class OttoApi:
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database
         self._intent_processor_pool = IntentProcessorPool()
+
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="eventlet")
         self._create_routes()
 
     def _create_routes(self):
@@ -161,5 +164,21 @@ class OttoApi:
 
             return jsonify({'message': response})
 
+    def _create_socket_handlers(self):
+
+        @self.socketio.on('connect')
+        def handle_connect():
+            print('Connected')
+            emit('message', {'data': 'Connected!'})
+
+        @self.socketio.on('disconnect')
+        def handle_connect():
+            print('Disconnected')
+
+        @self.socketio.on('send_message')
+        def handle_connect(data):
+            print('Connected')
+            emit('message', {'data': f'ECHO : {data}'})
+
     def run(self):
-        self.app.run()
+        self.socketio.run(self.app, port=5000, debug=True)
