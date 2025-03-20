@@ -9,7 +9,7 @@ st.title("WebSocket Communication with Flask")
 
 websocket_script = """
 <script>
-    var socket = io("http://localhost:5000");  
+    var socket = io("http://127.0.0.1:6000");  
 
     function sendMessage() {
         var message = document.getElementById("userMessage").value;

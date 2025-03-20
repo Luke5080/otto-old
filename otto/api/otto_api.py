@@ -5,8 +5,7 @@ from functools import wraps
 import jwt
 import mysql.connector
 from flask import Flask, jsonify, request
-from flask_socketio import SocketIO, emit
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
@@ -23,9 +22,7 @@ class OttoApi:
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database
         self._intent_processor_pool = IntentProcessorPool()
 
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode="eventlet")
         self._create_routes()
-
     def _create_routes(self):
         @self.app.before_request
         def initialize_db_connections():
@@ -113,11 +110,8 @@ class OttoApi:
         def process_intent():
             token = request.headers['Authorization']
             token = token.split(" ")[1]
-
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
-
             intent_request = request.get_json()
-
             if not intent_request or 'intent' not in intent_request:
                 return jsonify({'message': 'No intent found'}), 403
 
@@ -135,10 +129,16 @@ class OttoApi:
             messages = [HumanMessage(content=intent)]
 
             result = designated_processor.graph.invoke({"messages": messages})
-
+            resp = ""
+            for m in result['messages']:
+                if isinstance(m, AIMessage):
+                   print(m.content)
+                   resp += m.content + " "
             self._intent_processor_pool.return_intent_processor(designated_processor)
-
-            return jsonify({'message': result['operations']})
+            if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':
+                return jsonify({'message': resp})
+            else:
+                return jsonify({'message': resp})
 
         @self.app.route('/latest-activity', methods=['GET'])
         @validate_token
@@ -164,21 +164,5 @@ class OttoApi:
 
             return jsonify({'message': response})
 
-    def _create_socket_handlers(self):
-
-        @self.socketio.on('connect')
-        def handle_connect():
-            print('Connected')
-            emit('message', {'data': 'Connected!'})
-
-        @self.socketio.on('disconnect')
-        def handle_connect():
-            print('Disconnected')
-
-        @self.socketio.on('send_message')
-        def handle_connect(data):
-            print('Connected')
-            emit('message', {'data': f'ECHO : {data}'})
-
     def run(self):
-        self.socketio.run(self.app, port=5000, debug=True)
+        self.app.run()

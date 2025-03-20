@@ -7,7 +7,7 @@ import sys
 
 import inquirer
 import mysql.connector
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from prettytable import PrettyTable
 from rich.console import Console
 from rich.markdown import Markdown
@@ -114,8 +114,11 @@ class OttoShell(cmd.Cmd):
     @yaspin(text="Attempting to fulfill intent..")
     def non_verbose_output(self, intent):
         result = self._agent.graph.invoke({"messages": intent})
-
-        self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
+        for m in result['messages']:
+            print(type(m))
+            if isinstance(m, AIMessage):
+               print(m.content)
+        #self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
 
     def do_intent(self, intent):
         messages = [HumanMessage(content=intent)]
@@ -132,7 +135,7 @@ class OttoShell(cmd.Cmd):
             cursor = self._database_connection.cursor()
 
             cursor.execute(
-                f"INSERT INTO network_applications(app_name, password) VALUES(%s, %s)", (args.name, args.password)
+                f"INSERT INTO network_applications(username, password) VALUES(%s, %s)", (args.name, args.password)
             )
 
             self._database_connection.commit()
