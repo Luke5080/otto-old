@@ -23,6 +23,7 @@ class NetworkStateFinder:
         }
 
         return switch_struct
+
     @staticmethod
     def get_switches() -> list[int]:
         """

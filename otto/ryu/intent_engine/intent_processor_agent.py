@@ -1,9 +1,9 @@
 from datetime import datetime
-from langgraph.prebuilt import ToolNode
 
 import networkx as nx
-from langchain_core.messages import SystemMessage, ToolMessage, AIMessage
+from langchain_core.messages import SystemMessage, AIMessage
 from langgraph.graph import END, StateGraph
+from langgraph.prebuilt import ToolNode
 
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
@@ -20,7 +20,9 @@ class IntentProcessor:
         self.tools = {tool.name: tool for tool in tools}
         self.model = model.bind_tools(tools, tool_choice="auto")
         self.model_name = model.model_name
+
         self.model_factory = ModelFactory()
+
         self.processed_intents_db_conn = ProcessedIntentsDbOperator()
         self.network_db_operator = NetworkDbOperator()
 
@@ -60,8 +62,6 @@ class IntentProcessor:
         self.network_db_operator.connect()
 
         network_state = self.network_db_operator.dump_network_db()
-
-        self.network_db_operator.disconnect()
 
         network_graph = nx.Graph()
         switch_port_mappings = {}
@@ -104,53 +104,23 @@ class IntentProcessor:
     def needs_action(self, state: AgentState):
         """Check if any actions are needed"""
         last_msg = state['messages'][-1]
-        print(last_msg.tool_calls)
+
         return "continue" if len(last_msg.tool_calls) > 0 else "done"
-
-    def execute_action(self, state: AgentState):
-        """Execute agent tools"""
-        tool_calls = state['messages'][-1].tool_calls
-        results = []
-        print(tool_calls)
-        operations = state.get('operations', [])
-
-        for tool_call in tool_calls:
-            try:
-                tool = self.tools.get(tool_call['name'])
-                result = self.tool_node.invoke(tool_call) if tool else "Invalid tool"
-                results.append(ToolMessage(
-                    tool_call_id=tool_call['id'],
-                    name=tool_call['name'],
-                    content=str(result)
-                ))
-
-                operations.append(f"{tool_call['name']}({tool_call['args']})")
-
-            except Exception as e:
-                results.append(ToolMessage(
-                    tool_call_id=tool_call['id'],
-                    name=tool_call['name'],
-                    content=f"Error: {str(e)}"
-                ))
-
-        return {'messages': results, 'operations': operations}
 
     def save_intent(self, state: AgentState):
         """ Register processed intent into processed_intents_db"""
         operations = []
         for message in state['messages']:
             if isinstance(message, AIMessage) and len(message.tool_calls) > 0:
-               for tool in message.tool_calls:
-                   operations.append(f"{tool['name']}({tool['args']}")
-    
+                for tool in message.tool_calls:
+                    operations.append(f"{tool['name']}({tool['args']}")
+
         self.processed_intents_db_conn.connect()
 
         processed_intent = self.processed_intents_db_conn.save_intent(context=self.context,
                                                                       intent=state['messages'][0].content,
                                                                       operations=operations,
                                                                       timestamp=datetime.now())
-
-        self.processed_intents_db_conn.disconnect()
 
         return {'save_intent': processed_intent, 'operations': operations}
 

@@ -3,10 +3,10 @@ import os
 from functools import wraps
 
 import jwt
-import mysql.connector
 from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage, AIMessage
 
+from otto.api.authentication_db_conn_pool import AuthenticationDbConnPool
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
@@ -14,28 +14,19 @@ from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedInt
 class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
+    _authentication_db_pool = AuthenticationDbConnPool
 
     def __init__(self):
         self.app = Flask(__name__)
-        self._database_connection = None
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database
         self._intent_processor_pool = IntentProcessorPool()
+        self._authentication_db_pool = AuthenticationDbConnPool()
 
         self._create_routes()
 
     def _create_routes(self):
-        @self.app.before_request
-        def initialize_db_connections():
-            """
-            Setup necessary connections to databases before handling requests
-            """
-            if self._database_connection is None:
-                self._database_connection = mysql.connector.connect(
-                    user='root', password='root', host='localhost', port=3306, database='authentication_db'
-                )
-
-            self._processed_intents_db_conn.connect()
+        """ Creates route to be used by Flask app"""
 
         def validate_token(func):
             """
@@ -62,6 +53,12 @@ class OttoApi:
 
         @self.app.route('/login', methods=['POST'])
         def app_login():
+            """
+            Login function to authenticate a user/network application before using northbound interface.
+            The /login route is used by the streamlit dashboard to authenticate a user, as well as being used to
+            authenticate network applications which consume the different REST API endpoints. Returns a JWT token
+            to be used in subsequent API calls.
+            """
             login_request = request.get_json()
 
             if not login_request:
@@ -79,27 +76,37 @@ class OttoApi:
                 return jsonify(
                     {'message': 'Username AND Password are required for network application authentication'}), 403
 
-            cursor = self._database_connection.cursor()
+            conn = self._authentication_db_pool.pool.get_connection()
+            cursor = None
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
-            )
+                cursor.execute(
+                    f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
+                )
 
-            result = cursor.fetchone()
+                result = cursor.fetchone()
 
-            if result[0] == 0:
-                return jsonify({'message': f"{login_request['method']} {login_request['username']} not found"}), 403
+                if result[0] == 0:
+                    return jsonify({'message': f"{login_request['method']} {login_request['username']} not found"}), 403
 
-            cursor.execute(
-                f"SELECT * FROM {table} where username = %s AND password = %s",
-                (login_request['username'], login_request['password'])
-            )
+                cursor.execute(
+                    f"SELECT * FROM {table} where username = %s AND password = %s",
+                    (login_request['username'], login_request['password'])
+                )
+
+            finally:
+                if cursor is not None:
+                    cursor.close()
+
+                conn.close()
 
             if cursor.fetchone() is not None:
                 token = jwt.encode({
                     'app': login_request['username'],
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=3600)
                 }, self.app.config['SECRET_KEY'], algorithm='HS256')
+
                 return jsonify({'token': token})
 
             else:
@@ -112,6 +119,7 @@ class OttoApi:
             token = request.headers['Authorization']
             token = token.split(" ")[1]
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
+
             intent_request = request.get_json()
             if not intent_request or 'intent' not in intent_request:
                 return jsonify({'message': 'No intent found'}), 403
@@ -123,8 +131,6 @@ class OttoApi:
 
             designated_processor.context = token_data.get("app", {})
 
-            designated_processor.connect_to_db()
-
             intent = intent_request['intent']
 
             messages = [HumanMessage(content=intent)]
@@ -133,7 +139,6 @@ class OttoApi:
             resp = ""
             for m in result['messages']:
                 if isinstance(m, AIMessage):
-
                     resp += m.content + " "
 
             self._intent_processor_pool.return_intent_processor(designated_processor)

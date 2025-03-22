@@ -27,10 +27,6 @@ class ProcessedIntentsDbOperator:
             self.database = self.mongo_connector['intent_history']
             self.collection = self.database['processed_intents']
 
-    def disconnect(self):
-        if self.mongo_connector is not None:
-            self.mongo_connector.close()
-
     def save_intent(self, intent: str, context: str, operations: list[str], timestamp: datetime) -> dict:
         """
         Args:

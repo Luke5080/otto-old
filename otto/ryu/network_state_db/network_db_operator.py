@@ -27,11 +27,6 @@ class NetworkDbOperator:
             self._network_state_db = self._MongoConnector["topology"]
             self._switch_collection = self._network_state_db["switches"]
 
-    def disconnect(self):
-        """ Disconnect from network_state_db"""
-        if self._MongoConnector is not None:
-            self._MongoConnector.close()
-
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
