@@ -1,7 +1,8 @@
 from datetime import datetime
+from langgraph.prebuilt import ToolNode
 
 import networkx as nx
-from langchain_core.messages import SystemMessage, ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage, AIMessage
 from langgraph.graph import END, StateGraph
 
 from otto.intent_utils.agent_state import AgentState
@@ -15,6 +16,7 @@ class IntentProcessor:
         self.context = context
         self.system = system_prompt
         self.tool_list = tools
+        self.tool_node = ToolNode(self.tool_list)
         self.tools = {tool.name: tool for tool in tools}
         self.model = model.bind_tools(tools, tool_choice="auto")
         self.model_name = model.model_name
@@ -26,7 +28,7 @@ class IntentProcessor:
 
         graph.add_node("construct_network_state", self.construct_network_state)
         graph.add_node("reason_intent", self.reason_intent)
-        graph.add_node("execute_action", self.execute_action)
+        graph.add_node("execute_action", self.tool_node)
         graph.add_node("save_intent", self.save_intent)
 
         graph.set_entry_point("construct_network_state")
@@ -65,6 +67,7 @@ class IntentProcessor:
         switch_port_mappings = {}
 
         for switch, switch_data in network_state.items():
+
             for switch_port, remote_port in switch_data.get('portMappings', {}).items():
                 remote_switch = format(int(remote_port.split('-')[0][1]), '016x')
                 network_graph.add_edge(switch, remote_switch, port_info=(switch_port, remote_port))
@@ -78,8 +81,10 @@ class IntentProcessor:
 
                 switch_port_mappings[(switch, host_id)] = (switch_port, host_id)
                 switch_port_mappings[(host_id, switch)] = (host_id, switch_port)
-
         return {
+            'messages': [
+                SystemMessage(content=f"Current Network State:\n{network_state}")
+            ],
             'network_state': network_state,
             'network_graph': network_graph,
             'switch_port_mappings': switch_port_mappings
@@ -99,20 +104,20 @@ class IntentProcessor:
     def needs_action(self, state: AgentState):
         """Check if any actions are needed"""
         last_msg = state['messages'][-1]
-
+        print(last_msg.tool_calls)
         return "continue" if len(last_msg.tool_calls) > 0 else "done"
 
     def execute_action(self, state: AgentState):
         """Execute agent tools"""
         tool_calls = state['messages'][-1].tool_calls
         results = []
-
+        print(tool_calls)
         operations = state.get('operations', [])
 
         for tool_call in tool_calls:
             try:
                 tool = self.tools.get(tool_call['name'])
-                result = tool.invoke(tool_call['args']) if tool else "Invalid tool"
+                result = self.tool_node.invoke(tool_call) if tool else "Invalid tool"
                 results.append(ToolMessage(
                     tool_call_id=tool_call['id'],
                     name=tool_call['name'],
@@ -132,17 +137,22 @@ class IntentProcessor:
 
     def save_intent(self, state: AgentState):
         """ Register processed intent into processed_intents_db"""
-
+        operations = []
+        for message in state['messages']:
+            if isinstance(message, AIMessage) and len(message.tool_calls) > 0:
+               for tool in message.tool_calls:
+                   operations.append(f"{tool['name']}({tool['args']}")
+    
         self.processed_intents_db_conn.connect()
 
         processed_intent = self.processed_intents_db_conn.save_intent(context=self.context,
                                                                       intent=state['messages'][0].content,
-                                                                      operations=state.get('operations', {}),
+                                                                      operations=operations,
                                                                       timestamp=datetime.now())
 
         self.processed_intents_db_conn.disconnect()
 
-        return {'save_intent': processed_intent}
+        return {'save_intent': processed_intent, 'operations': operations}
 
     def change_model(self, model):
         """Change the language model used by IntentProcessor"""

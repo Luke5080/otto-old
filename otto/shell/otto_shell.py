@@ -33,7 +33,6 @@ class OttoShell(cmd.Cmd):
         self.available_models = ["gpt-4o", "gpt-4o-mini", "llama", "deepseek", "gemini", "gpt-o3-mini"]
         self._controller = controller
         self._agent = agent
-        self._agent.connect_to_db()
         self._model = agent.model.model_name
         self._verbosity_level = "VERBOSE"
         self._controller_object = controller_object

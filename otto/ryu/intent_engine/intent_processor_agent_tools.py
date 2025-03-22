@@ -23,8 +23,7 @@ def check_switch(switch_id: str) -> dict:
 @tool
 def get_path_between_nodes(source: str,
                            destination: str,
-                           network_graph: Annotated[nx.Graph, InjectedState("network_graph")],
-                           switch_port_mappings: Annotated[dict, InjectedState("switch_port_mappings")]
+                           network_state: Annotated[dict, InjectedState]
                            ) -> list[tuple[str, str]]:
     """
     Function to get a path between nodes in the network. The nodes can either be a switch or a host.
@@ -44,7 +43,8 @@ def get_path_between_nodes(source: str,
     Switch5 port 3 (eth3) is connected to switch3 port 1 (eth1)
     Switch3 is connected to host3 via port 3 (eth3)
     """
-
+    network_graph = network_state['network_graph']
+    switch_port_mappings = network_state['switch_port_mappings']
     shortest_path = nx.shortest_path(network_graph, source, destination)
 
     full_path = []
@@ -197,6 +197,6 @@ def modify_all_matching_rules(switch_id: str, table_id: int, match: dict, action
 
 
 def create_tool_list(extra_funcs=None) -> list:
-    return [get_nw_state, add_rule, delete_rule_strict,
+    return [add_rule, delete_rule_strict,
             modify_rule_strict, modify_all_matching_rules,
             check_switch, get_path_between_nodes]
