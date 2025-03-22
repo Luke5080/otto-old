@@ -23,6 +23,7 @@ class OttoApi:
         self._intent_processor_pool = IntentProcessorPool()
 
         self._create_routes()
+
     def _create_routes(self):
         @self.app.before_request
         def initialize_db_connections():
@@ -132,9 +133,11 @@ class OttoApi:
             resp = ""
             for m in result['messages']:
                 if isinstance(m, AIMessage):
-                   print(m.content)
-                   resp += m.content + " "
+
+                    resp += m.content + " "
+
             self._intent_processor_pool.return_intent_processor(designated_processor)
+
             if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':
                 return jsonify({'message': resp})
             else:

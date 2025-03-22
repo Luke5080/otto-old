@@ -16,11 +16,21 @@ class NetworkDbOperator:
         self._switch_collection = None
 
     def connect(self):
+        """
+        Connect method to be used when wishing to connect to the network_state_db.
+        This is run after the object has been created, and created within the process which will
+        connect to the database to prevent any forking issues.
+        """
         if self._MongoConnector is None:
             self._MongoConnector = MongoClient('localhost', 27017)
 
             self._network_state_db = self._MongoConnector["topology"]
             self._switch_collection = self._network_state_db["switches"]
+
+    def disconnect(self):
+        """ Disconnect from network_state_db"""
+        if self._MongoConnector is not None:
+            self._MongoConnector.close()
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:

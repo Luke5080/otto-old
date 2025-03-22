@@ -1,20 +1,11 @@
-from langgraph.types import Command
+from typing import Annotated
+
+import networkx as nx
 import requests
 from langchain_core.tools import tool
-from langchain_core.runnables import RunnableConfig
-from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+from langgraph.prebuilt import InjectedState
+
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
-
-
-@tool
-def get_nw_state() -> dict:
-    """
-    Function to get the current entire network state
-    """
-    network_db = NetworkDbOperator()
-    network_db.connect()
-    network_state = network_db.dump_network_db()
-    return network_state
 
 
 @tool
@@ -29,9 +20,12 @@ def check_switch(switch_id: str) -> dict:
     return nw_state_finder.get_switch_details(switch_id)
 
 
-
 @tool
-def get_path_between_nodes(source: str, destination: str, state) -> list[tuple[str, str]]:
+def get_path_between_nodes(source: str,
+                           destination: str,
+                           network_graph: Annotated[nx.Graph, InjectedState("network_graph")],
+                           switch_port_mappings: Annotated[dict, InjectedState("switch_port_mappings")]
+                           ) -> list[tuple[str, str]]:
     """
     Function to get a path between nodes in the network. The nodes can either be a switch or a host.
     Args:
@@ -40,7 +34,6 @@ def get_path_between_nodes(source: str, destination: str, state) -> list[tuple[s
         For hosts, provide the name of the host e.g. host2.
         destination: destination node for the path. Follow the same format as instructed
         in the source argument descriptor.
-        state: the current network state - obtained through the network_state key  in the state of the agent. DO NOT ADD THIS ARGUMENT TO THE FUNCTION
     When used to get path between two hosts, the function will return an array of tuples
     indicating the paths through the network device's ports to arrive to the destination. E.g:
     src: host1 destination: host3
@@ -51,29 +44,16 @@ def get_path_between_nodes(source: str, destination: str, state) -> list[tuple[s
     Switch5 port 3 (eth3) is connected to switch3 port 1 (eth1)
     Switch3 is connected to host3 via port 3 (eth3)
     """
-    network_state = state.get("network_state", {})
-
-    if not network_state:
-        return None
-    for switch, switch_data in network_state:
-            for switch_port, remote_port in switch_data.get('portMappings', {}).items():
-                remote_switch = format(int(remote_port.split('-')[0][1]), '016x')
-                network_graph.add_edge(switch, remote_switch, port_info=(switch_port, remote_port))
-
-                # self.switch_port_mappings[(switch, remote_switch)] = (switch_port, remote_port)
-                # self.switch_port_mappings[(remote_switch, switch)] = (remote_port, switch_port)
-
-            for switch_port, remote_host in switch_data.get('connectedHosts', {}).items():
-                host_id = remote_host['id']
-                network_graph.add_edge(switch, host_id)
-
-                # self.switch_port_mappings[(switch, host_id)] = (switch_port, host_id)
-                # self.switch_port_mappings[(host_id, switch)] = (host_id, switch_port)
-
-                # self.host_mappings.setdefault(switch, {})[switch_port] = host_id
 
     shortest_path = nx.shortest_path(network_graph, source, destination)
-    return shortest_path
+
+    full_path = []
+
+    for i in range(len(shortest_path) - 1):
+        full_path.append(switch_port_mappings[(shortest_path[i], shortest_path[i + 1])])
+
+    return full_path
+
 
 @tool
 def add_rule(switch_id: str, table_id: int, match: dict, actions: list, priority: int = 32768) -> int:

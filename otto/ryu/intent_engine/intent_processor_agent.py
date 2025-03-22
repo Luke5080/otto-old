@@ -1,10 +1,12 @@
 from datetime import datetime
 
+import networkx as nx
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.graph import END, StateGraph
 
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
+from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
 
@@ -18,17 +20,17 @@ class IntentProcessor:
         self.model_name = model.model_name
         self.model_factory = ModelFactory()
         self.processed_intents_db_conn = ProcessedIntentsDbOperator()
+        self.network_db_operator = NetworkDbOperator()
 
         graph = StateGraph(AgentState)
-        graph.add_node("understand_intent", self.understand_intent)
-        graph.add_node("check_state", self.check_state)
+
+        graph.add_node("construct_network_state", self.construct_network_state)
         graph.add_node("reason_intent", self.reason_intent)
         graph.add_node("execute_action", self.execute_action)
         graph.add_node("save_intent", self.save_intent)
 
-        graph.set_entry_point("understand_intent")
-        graph.add_edge("understand_intent", "check_state")
-        graph.add_edge("check_state", "reason_intent")
+        graph.set_entry_point("construct_network_state")
+        graph.add_edge("construct_network_state", "reason_intent")
         graph.add_conditional_edges(
             "reason_intent",
             self.needs_action,
@@ -39,44 +41,49 @@ class IntentProcessor:
         graph.add_edge("save_intent", END)
 
         self.graph = graph.compile()
-    def connect_to_db(self):
-        self.processed_intents_db_conn.connect()
 
-    def change_model(self, model):
-        """Change the language model used by IntentProcessor"""
-        chosen_model = self.model_factory.get_model(model)
-        self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
+    def construct_network_state(self, state: AgentState):
+        """
+        Method to construct the network state to be used by a single agent during an intent fulfilment operation.
+        This is entrypoint to the graph, and constructs three important items to be added to the agent's state:
+            network_state: full dictionary of documents registered in otto_network_state_db
+            network_graph: links between hosts and switches modelled in a nx.Graph object
+            switch_port_mappings: dictionary which follows the structure: {(s1, s2): (s1-eth1: s2-eth2)}
+            which describes the interfaces used to connect two nodes.
 
-    def save_intent(self, state: AgentState):
-        """ Register processed intent into processed_intents_db"""
+        The network_state will be used as a reference to the agent as to how the current network looks,
+        and network_graph and switch_port_mappings is utilised in the get_path_between_nodes tool to find a path
+        between two nodes in the network.
+        """
+        self.network_db_operator.connect()
 
-        processed_intent = self.processed_intents_db_conn.save_intent(context=self.context,
-                                                                      intent=state['messages'][0].content,
-                                                                      operations=state.get('operations', {}),
-                                                                      timestamp=datetime.now())
+        network_state = self.network_db_operator.dump_network_db()
 
-        return {'save_intent': processed_intent}
+        self.network_db_operator.disconnect()
 
-    def check_state(self, state: AgentState):
-        """Get current network state"""
-        current_state = self.tools["get_nw_state"].invoke({})
+        network_graph = nx.Graph()
+        switch_port_mappings = {}
+
+        for switch, switch_data in network_state.items():
+            for switch_port, remote_port in switch_data.get('portMappings', {}).items():
+                remote_switch = format(int(remote_port.split('-')[0][1]), '016x')
+                network_graph.add_edge(switch, remote_switch, port_info=(switch_port, remote_port))
+
+                switch_port_mappings[(switch, remote_switch)] = (switch_port, remote_port)
+                switch_port_mappings[(remote_switch, switch)] = (remote_port, switch_port)
+
+            for switch_port, remote_host in switch_data.get('connectedHosts', {}).items():
+                host_id = remote_host['id']
+                network_graph.add_edge(switch, host_id)
+
+                switch_port_mappings[(switch, host_id)] = (switch_port, host_id)
+                switch_port_mappings[(host_id, switch)] = (host_id, switch_port)
 
         return {
-            'messages': [
-                SystemMessage(content=f"Current Network State:\n{current_state}")
-            ],
-            'network_state': current_state
+            'network_state': network_state,
+            'network_graph': network_graph,
+            'switch_port_mappings': switch_port_mappings
         }
-
-    def understand_intent(self, state: AgentState):
-        messages = state['messages']
-
-        messages = [SystemMessage(
-            content="Clearly provide your full understanding of the intent. This should be reasoned in depth, and should be an individual task, meaning you can not get help from a human operator.\n")] + messages
-
-        response = self.model.invoke(messages)
-
-        return {'messages': state['messages'], 'intent_understanding': response}
 
     def reason_intent(self, state: AgentState):
         """LLM decides next action based on intent and state"""
@@ -92,40 +99,52 @@ class IntentProcessor:
     def needs_action(self, state: AgentState):
         """Check if any actions are needed"""
         last_msg = state['messages'][-1]
-        print(last_msg)
+
         return "continue" if len(last_msg.tool_calls) > 0 else "done"
 
     def execute_action(self, state: AgentState):
-        """Execute network configuration tools"""
+        """Execute agent tools"""
         tool_calls = state['messages'][-1].tool_calls
         results = []
 
         operations = state.get('operations', [])
-        for t in tool_calls:
-            try:
-                tool = self.tools.get(t['name'])
-                if tool != "get_path_between_nodes":
-                     result = tool.invoke(t['args']) if tool else "Invalid tool"
-                     results.append(ToolMessage(
-                       tool_call_id=t['id'],
-                       name=t['name'],
-                       content=str(result)
-                       ))
-                else:
-                     result = tool.invoke(t['args', state.get('network_state', {})])
-                     results.append(ToolMessage(
-                       tool_call_id=t['id'],
-                       name=t['name'],
-                       content=str(result)
-                       ))
 
-                operations.append(t['name'])
+        for tool_call in tool_calls:
+            try:
+                tool = self.tools.get(tool_call['name'])
+                result = tool.invoke(tool_call['args']) if tool else "Invalid tool"
+                results.append(ToolMessage(
+                    tool_call_id=tool_call['id'],
+                    name=tool_call['name'],
+                    content=str(result)
+                ))
+
+                operations.append(f"{tool_call['name']}({tool_call['args']})")
 
             except Exception as e:
                 results.append(ToolMessage(
-                    tool_call_id=t['id'],
-                    name=t['name'],
+                    tool_call_id=tool_call['id'],
+                    name=tool_call['name'],
                     content=f"Error: {str(e)}"
                 ))
 
         return {'messages': results, 'operations': operations}
+
+    def save_intent(self, state: AgentState):
+        """ Register processed intent into processed_intents_db"""
+
+        self.processed_intents_db_conn.connect()
+
+        processed_intent = self.processed_intents_db_conn.save_intent(context=self.context,
+                                                                      intent=state['messages'][0].content,
+                                                                      operations=state.get('operations', {}),
+                                                                      timestamp=datetime.now())
+
+        self.processed_intents_db_conn.disconnect()
+
+        return {'save_intent': processed_intent}
+
+    def change_model(self, model):
+        """Change the language model used by IntentProcessor"""
+        chosen_model = self.model_factory.get_model(model)
+        self.model = chosen_model.bind_tools(self.tool_list, tool_choice="auto")
