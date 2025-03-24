@@ -155,8 +155,6 @@ class NetworkStateUpdater(Thread):
 
             if diff_found:
 
-                self._nw_state.construct_network_graph(current_nw_state)
-
                 network_state_db_updates = []
 
                 if "values_changed" in diff_found:

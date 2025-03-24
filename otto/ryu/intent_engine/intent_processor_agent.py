@@ -113,7 +113,7 @@ class IntentProcessor:
         for message in state['messages']:
             if isinstance(message, AIMessage) and len(message.tool_calls) > 0:
                 for tool in message.tool_calls:
-                    operations.append(f"{tool['name']}({tool['args']}")
+                    operations.append(f"{tool['name']}({tool['args']})")
 
         self.processed_intents_db_conn.connect()
 
@@ -121,6 +121,7 @@ class IntentProcessor:
                                                                       intent=state['messages'][0].content,
                                                                       operations=operations,
                                                                       timestamp=datetime.now())
+        self.processed_intents_db_conn.register_model_usage(self.model_name)
 
         return {'save_intent': processed_intent, 'operations': operations}
 

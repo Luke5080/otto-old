@@ -1,5 +1,5 @@
 import time
-
+import graphviz
 import requests
 import streamlit as st
 
@@ -35,5 +35,8 @@ if st.session_state.user_token is not None:
             with st.spinner("Contacting IntentProcessor.."):
                 response = requests.post("http://127.0.0.1:5000/declare-intent", headers=headers, json=data)
 
-            output_response = st.write_stream(generate_output(response.json()['message']))
+            intent_processor_response = response.json()
+            output_response = st.write_stream(generate_output(intent_processor_response['message']))
+            with st.expander("Operations completed:"):
+                 st.write(intent_processor_response['operations'])
             st.session_state.messages.append({'role': 'assistant', 'content': output_response})

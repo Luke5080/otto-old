@@ -96,3 +96,18 @@ class ApiHandler:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
 
         return top_activity_response.json().get('message', {})
+
+    def get_model_usage(self) -> dict:
+        """
+        Method to retrieve usage per user/application. Returns a dictionary where each key is the name of a user/application,
+        and each value is the number of intents declared
+        """
+        try:
+            model_usage_response = requests.get(f"{self._api_url}/model-usage", headers=self._request_headers)
+
+        except HTTPError as e:
+            raise ApiRequestError(f"Error while retrieving data from {self._api_url}/model-usage: {e}")
+        except Exception as e:
+            raise ApiRequestError(f"Error while retrieving data from {self._api_url}/model-usage: {e}")
+
+        return model_usage_response.json().get('message', {})

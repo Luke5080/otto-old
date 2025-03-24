@@ -75,6 +75,27 @@ def create_top_activity_df() -> Union[pd.DataFrame, None]:
 
     return top_activity_df
 
+def create_model_usage_pie_chart():
+    
+    model_data = st_api_handler.get_model_usage()
+
+    fig = None
+
+    if model_data is not None:
+       y = []
+       mylabels = []
+       for model, count in model_data.items():
+           y.append(count)
+           mylabels.append(model)
+
+       fig, ax = plt.subplots()
+       fig.patch.set_alpha(0)
+       ax.set_facecolor('none')
+       ax.pie(y, shadow=True)
+       ax.legend(mylabels, loc="best", frameon=False)
+
+    return fig
+        
 
 if "user_token" not in st.session_state:
     st.session_state.user_token = None
@@ -95,7 +116,6 @@ if st.session_state.user_token is None:
             st.error(f"Login Failed: {authentication_response['message']}")
         else:
             placeholder.empty()
-            print(authentication_response.json()['token'])
             st.session_state.user_token = authentication_response.json()['token']
             st_api_handler.set_token(authentication_response.json()['token'])
             st.rerun()
@@ -116,12 +136,9 @@ if st.session_state.user_token is not None:
                 with st.expander(f"Intent: {row['Intent']}"):
                     st.write(f"**Declared By**: {row['Declared By']}")
                     st.write(f"**Intent**: {row['Intent']}")
-                    st.write(f"**Outcome**: {row['Outcome']}")
-
-                    graph = graphviz.Digraph()
-                    for i in range(0, len(row['Outcome']) - 1):
-                        graph.edge(row['Outcome'][i], row['Outcome'][i + 1])
-                    st.graphviz_chart(graph)
+                    st.write(f"**Outcome**\n:")
+                    for outcome in row['Outcome']:
+                        st.markdown(f"- {outcome}")
 
         else:
             st.write("No data available")
@@ -135,18 +152,13 @@ if st.session_state.user_token is not None:
 
     with col[1]:
         st.subheader("Model Usage")
+   
+        fig = create_model_usage_pie_chart()
 
-        y = np.array([35, 25, 25, 15])
-        mylabels = ["gpt-4o", "gpt-4o-mini", "Deepseek", "gpt-o3-mini"]
-
-        fig, ax = plt.subplots()
-        fig.patch.set_alpha(0)
-        ax.set_facecolor('none')
-        ax.pie(y, shadow=True)
-        ax.legend(mylabels, loc="best", frameon=False)
-
-        st.pyplot(fig, use_container_width=True)
-
+        if fig is not None:
+           st.pyplot(fig, use_container_width=True)
+        else:
+            st.write("No data available")
         st.subheader("Usage by users/applications")
 
         if top_activity_table is not None:

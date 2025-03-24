@@ -79,7 +79,7 @@ class OttoApi:
             conn = self._authentication_db_pool.pool.get_connection()
             cursor = None
             try:
-                cursor = conn.cursor()
+                cursor = conn.cursor(buffered=True)
 
                 cursor.execute(
                     f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
@@ -144,14 +144,14 @@ class OttoApi:
             self._intent_processor_pool.return_intent_processor(designated_processor)
 
             if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':
-                return jsonify({'message': resp})
+                return jsonify({'message': resp, 'operations': result['operations']})
             else:
-                return jsonify({'message': resp})
+                return jsonify({'message': resp, 'operations': result['operations']})
 
         @self.app.route('/latest-activity', methods=['GET'])
         @validate_token
         def get_latest_activity():
-
+            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_latest_activity()
 
             return jsonify({'message': response})
@@ -159,7 +159,7 @@ class OttoApi:
         @self.app.route('/weekly-activity', methods=['GET'])
         @validate_token
         def get_weekly_activity():
-
+            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_weekly_activity()
 
             return jsonify({'message': response})
@@ -167,8 +167,16 @@ class OttoApi:
         @self.app.route('/top-activity', methods=['GET'])
         @validate_token
         def get_top_activity():
-
+            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_top_activity()
+
+            return jsonify({'message': response})
+
+        @self.app.route('/model-usage', methods=['GET'])
+        @validate_token
+        def get_model_activity():
+            self._processed_intents_db_conn.connect()
+            response = self._processed_intents_db_conn.get_model_usage()
 
             return jsonify({'message': response})
 

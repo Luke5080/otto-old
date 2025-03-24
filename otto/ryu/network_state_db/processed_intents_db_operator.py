@@ -13,7 +13,6 @@ class ProcessedIntentsDbOperator:
     def __init__(self):
         self.mongo_connector = None
         self.database = None
-        self.collection = None
 
     def connect(self):
         """
@@ -25,7 +24,6 @@ class ProcessedIntentsDbOperator:
             self.mongo_connector = MongoClient('localhost', 27018)
 
             self.database = self.mongo_connector['intent_history']
-            self.collection = self.database['processed_intents']
 
     def save_intent(self, intent: str, context: str, operations: list[str], timestamp: datetime) -> dict:
         """
@@ -37,6 +35,7 @@ class ProcessedIntentsDbOperator:
 
         Method to save the processed intent to the processed_intents collection in intents_history database
         """
+        collection = self.database['processed_intents']
         processed_intent = {
             "declaredBy": context,
             "intent": intent,
@@ -45,24 +44,23 @@ class ProcessedIntentsDbOperator:
         }
         try:
 
-            self.collection.insert_one(processed_intent)
+            collection.insert_one(processed_intent)
 
         except PyMongoError as e:
             raise ProcessedIntentsDbException(
                 f"Error while putting processed_intent into otto_processed_intents_db: {e}")
 
-        print(processed_intent)
         return processed_intent
 
     def get_latest_activity(self) -> dict:
+        collection = self.database['processed_intents']
         try:
 
-            latest_data = self.collection.find().sort('_id', -1).limit(5)
+            latest_data = collection.find().sort('_id', -1).limit(5)
 
             response = {}
 
             for record in latest_data:
-                print(f"RECORD {record}")
                 response[str(record['timestamp'])] = {}
                 response[str(record['timestamp'])]['declaredBy'] = record['declaredBy']
                 response[str(record['timestamp'])]['intent'] = record['intent']
@@ -76,6 +74,7 @@ class ProcessedIntentsDbOperator:
         return response
 
     def get_weekly_activity(self) -> dict:
+        collection = self.database['processed_intents']
         today = datetime.today()
         one_week_ago = today - timedelta(weeks=1)
 
@@ -95,7 +94,7 @@ class ProcessedIntentsDbOperator:
 
         response = {}
 
-        results = list(self.collection.aggregate(pipeline))
+        results = list(collection.aggregate(pipeline))
 
         for result in results:
             response[result['_id']] = result['count']
@@ -103,7 +102,7 @@ class ProcessedIntentsDbOperator:
         return response
 
     def get_top_activity(self) -> dict:
-
+        collection = self.database['processed_intents']
         pipeline = [
             {
                 "$group": {
@@ -113,9 +112,25 @@ class ProcessedIntentsDbOperator:
 
         response = {}
 
-        results = list(self.collection.aggregate(pipeline))
+        results = list(collection.aggregate(pipeline))
 
         for result in results:
             response[result['_id']] = result['count']
 
         return response
+
+    def register_model_usage(self, model: str) -> dict:
+        collection = self.database['model_usage']
+
+        collection.update_one({ 'model' : model}, { '$inc': {'count': 1} }, upsert=True)
+
+    def get_model_usage(self) -> dict:
+        collection = self.database['model_usage']
+
+        model_usage = {}
+        for col in collection.find():
+            del col['_id']
+            model_usage[col['model']] = col['count']
+
+        return model_usage
+        
