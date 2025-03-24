@@ -8,35 +8,38 @@ from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 if st.session_state.user_token is None:
     st.info('Please Login from the Home page and try again.')
     st.stop()
-    
 
-if st.session_state.user_token is not None:
-    network_db_operator = NetworkDbOperator()
-    network_db_operator.connect()
 
-    network_state = network_db_operator.dump_network_db()
+def create_network_graph(network_state: dict):
+    """
+    Function to create a network graph from current network state
+    Creates a diagram with switches, hosts and links
+    Credit to: https://networkx.org/documentation/stable/auto_examples/drawing/plot_custom_node_icons.html
+    Args:
+        network_state: dict - current network state retrieved from otto_network_state_db
+    """
 
-    network_graph = nx.Graph()
-    switch_port_mappings = {}
+    if not network_state:
+        return None
 
-    # Create a network diagram to display on Network State page
-    # Credit to: https://networkx.org/documentation/stable/auto_examples/drawing/plot_custom_node_icons.html
     icons = {
         "switch": "otto/gui/pages/switch.png",
         "host": "otto/gui/pages/host.png",
     }
+
+    network_graph = nx.Graph()
 
     images = {k: PIL.Image.open(fname) for k, fname in icons.items()}
 
     for switch, switch_data in network_state.items():
         switch_decimal = f"switch-{format(int(switch), 'd')}"
         if switch_decimal not in network_graph.nodes():
-           network_graph.add_node(switch_decimal, image=images["switch"])
+            network_graph.add_node(switch_decimal, image=images["switch"])
         for switch_port, remote_port in switch_data.get('portMappings', {}).items():
             remote_switch = f"switch-{int(remote_port.split('-')[0][1])}"
             if remote_switch not in network_graph.nodes():
-               print(f"{remote_switch} not in graph. adding..")
-               network_graph.add_node(remote_switch, image=images["switch"])
+                print(f"{remote_switch} not in graph. adding..")
+                network_graph.add_node(remote_switch, image=images["switch"])
 
             network_graph.add_edge(switch_decimal, remote_switch, port_info=(switch_port, remote_port))
 
@@ -87,12 +90,28 @@ if st.session_state.user_token is not None:
         a.imshow(network_graph.nodes[n]["image"])
         a.axis("off")
 
-    st.header("Current Network State")
-    st.pyplot(fig)
+    return fig
 
-    for switch, switch_data in network_state.items():
-        with st.expander(f"Flows for switch-{format(int(switch), 'd')}:"):
-             st.write(f"Switch datapath ID: {switch}")
-             st.write(f"Switch ID: {format(int(switch), 'd')}")
-             st.write("Installed Flows:")
-             st.write(switch_data.get("installedFlows", {}))
+
+if st.session_state.user_token is not None:
+    network_db_operator = NetworkDbOperator()
+    network_db_operator.connect()
+
+    network_state = network_db_operator.dump_network_db()
+
+    network_graph_complete = create_network_graph(network_state)
+
+    st.header("Current Network State")
+
+    if network_graph_complete is not None:
+        st.pyplot(network_graph_complete)
+    else:
+        st.write("No network state available")
+
+    if network_state:
+        for switch, switch_data in network_state.items():
+            with st.expander(f"Flows for switch-{format(int(switch), 'd')}:"):
+                st.write(f"Switch datapath ID: {switch}")
+                st.write(f"Switch ID: {format(int(switch), 'd')}")
+                st.write("Installed Flows:")
+                st.write(switch_data.get("installedFlows", {}))
