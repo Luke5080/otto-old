@@ -60,7 +60,10 @@ class ApiHandler:
             latest_activity_response.raise_for_status()
 
         except HTTPError as e:
-            raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
+            raise ApiRequestError(f"""
+            Error while retrieving data from {self._api_url}/latest-activity
+            Ensure that otto is running with the Gunicorn server running\nError: {e}
+            """)
 
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
@@ -76,7 +79,11 @@ class ApiHandler:
             weekly_activity_response = requests.get(f"{self._api_url}/weekly-activity", headers=self._request_headers)
 
         except HTTPError as e:
-            raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
+            raise ApiRequestError(f"""
+            Error while retrieving data from {self._api_url}/latest-activity
+            Ensure that otto is running with the Gunicorn server running\nError: {e}
+            """)
+
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
 
@@ -91,7 +98,10 @@ class ApiHandler:
             top_activity_response = requests.get(f"{self._api_url}/top-activity", headers=self._request_headers)
 
         except HTTPError as e:
-            raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
+            raise ApiRequestError(f"""
+                                  Error while retrieving data from {self._api_url}/latest-activity
+                                  Ensure that otto is running with the Gunicorn server running\nError: {e}
+                                  """)
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
 
@@ -106,8 +116,35 @@ class ApiHandler:
             model_usage_response = requests.get(f"{self._api_url}/model-usage", headers=self._request_headers)
 
         except HTTPError as e:
-            raise ApiRequestError(f"Error while retrieving data from {self._api_url}/model-usage: {e}")
+            raise ApiRequestError(f"""
+                Error while retrieving data from {self._api_url}/model-usage. 
+                Ensure that otto is running with the Gunicorn server running\nError: {e}
+                """)
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/model-usage: {e}")
 
         return model_usage_response.json().get('message', {})
+
+    def declare_intent(self, intent: str) -> dict:
+        """
+        Method to send intent to be processed and fulfilled by sending a POST request
+        to /declare-intent endpoint. Returns response in JSON format
+
+        Args:
+            intent: str - Intent in string format to be sent to /declare-intent API.
+        """
+        data = {'method': 'user', 'token': self._authentication_token, 'intent': intent,
+                'stream_type': 'AgentMessages'}
+
+        try:
+            response = requests.post(f"{self._api_url}/declare-intent", headers=self._request_headers, json=data)
+
+        except HTTPError as e:
+            raise ApiRequestError(f"""
+                Error while declaring intent to {self._api_url}/declare-intent.
+                Ensure that otto is running with the Gunicorn server running\nError: {e}
+                """)
+        except Exception as e:
+            raise ApiRequestError(f"Error while declaring intent to {self._api_url}/declare-intent: {e}")
+
+        return response.json()
