@@ -5,17 +5,17 @@ from glom import glom
 from pymongo import DeleteOne, InsertOne, UpdateOne
 
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-from otto.ryu.network_state_db.network_state import NetworkState
 
 
 class NetworkStateUpdater(Thread):
-    _nw_state: NetworkState
     _nw_db: NetworkDbOperator
 
-    def __init__(self):
+    def __init__(self, nw_state):
         super().__init__()
-        self._nw_state = NetworkState.get_instance()
-        self._nw_db = NetworkDbOperator.get_instance()
+        self._nw_state = nw_state
+        self._nw_db = NetworkDbOperator()
+        self._nw_db.connect()
+
         self.stop_event = Event()
 
     @staticmethod
@@ -50,7 +50,7 @@ class NetworkStateUpdater(Thread):
         for changed_key, new_value in change.items():
             changed_key = self._format_key(changed_key)
 
-            query = {"_id": self._nw_db.object_ids[changed_key.pop(0)]}
+            query = {"name": changed_key.pop(0)}
 
             update = {"$set": {".".join(changed_key): new_value['new_value']}}
 
@@ -63,7 +63,6 @@ class NetworkStateUpdater(Thread):
         either adding an entire new switch document OR adding a new key to a switch document
         """
         updates = []
-
         for added_item in added_value:
             added_item = self._format_key(added_item)
 
@@ -76,7 +75,7 @@ class NetworkStateUpdater(Thread):
 
                 switch_dpid = added_item.pop(0)
 
-                query = {"_id": self._nw_db.object_ids[switch_dpid]}
+                query = {"name": switch_dpid}
 
                 update = {"$set": {".".join(added_item): glom(nw_state, full_update)}}
 
@@ -95,12 +94,12 @@ class NetworkStateUpdater(Thread):
             removed_item = self._format_key(removed_item)
 
             if len(removed_item) == 1:
-                query = {"_id": self._nw_db.object_ids[removed_item[0]]}
+                query = {"name": removed_item[0]}
 
                 updates.append(DeleteOne(query))
 
             else:
-                query = {"_id": self._nw_db.object_ids[removed_item.pop(0)]}
+                query = {"name": removed_item.pop(0)}
 
                 update = {"$unset": {".".join(removed_item): ""}}
 
@@ -120,7 +119,7 @@ class NetworkStateUpdater(Thread):
 
             del switch_document[-1]  # removes index of IP to be removed from array - don't need it with $pull
 
-            query = {"_id": self._nw_db.object_ids[switch_document.pop(0)]}
+            query = {"name": switch_document.pop(0)}
 
             update = {"$pull": {".".join(switch_document): ip}}
 
@@ -138,7 +137,7 @@ class NetworkStateUpdater(Thread):
         for switch_document, ip in new_ips.items():
             switch_document = self._format_key(switch_document)
 
-            query = {"_id": self._nw_db.object_ids[switch_document.pop(0)]}
+            query = {"name": switch_document.pop(0)}
 
             update = {"$set": {".".join(switch_document): ip}}
 
@@ -147,6 +146,13 @@ class NetworkStateUpdater(Thread):
         return updates
 
     def run(self):
+        """
+        Main method of NetworkStateUpdater thread. While the stop event is not set, every minute do the following:
+        1. Get the current network state from available Ryu APIs
+        2. Perform a comparison between the found (current) network state and the registered state in network_state_db
+        3. If a difference is found between the two, update/delete/add the respective document
+        4. Write the updates to the network_state_db
+        """
         while not self.stop_event.is_set():
             current_nw_state = {}
             for document in self._nw_state.get_network_state():
@@ -154,9 +160,7 @@ class NetworkStateUpdater(Thread):
 
             diff_found = DeepDiff(self._nw_state.get_registered_state(), current_nw_state)
 
-            if len(diff_found) > 0:
-
-                self._nw_state.construct_network_graph(current_nw_state)
+            if diff_found:
 
                 network_state_db_updates = []
 
@@ -175,7 +179,7 @@ class NetworkStateUpdater(Thread):
                 if "iterable_item_removed" in diff_found:
                     network_state_db_updates += self._remove_ip(diff_found['iterable_item_removed'])
 
-                if len(network_state_db_updates) > 0:
+                if network_state_db_updates:
                     self._nw_db.bulk_update(network_state_db_updates)
 
             self.stop_event.wait(60)

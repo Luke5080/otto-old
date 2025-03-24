@@ -1,17 +1,11 @@
+from typing import Annotated
+
 import networkx as nx
 import requests
 from langchain_core.tools import tool
+from langgraph.prebuilt import InjectedState
 
-from otto.ryu.network_state_db.network_state import NetworkState
-
-
-@tool
-def get_nw_state() -> dict:
-    """
-    Function to get the current entire network state
-    """
-    network_state = NetworkState.get_instance()
-    return network_state.get_registered_state()
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 
 @tool
@@ -21,12 +15,17 @@ def check_switch(switch_id: str) -> dict:
     Args:
         switch_id: ID of the switch (in decimal)
     """
-    network_state = NetworkState.get_instance()
-    return network_state[switch_id]
+
+    nw_state_finder = NetworkStateFinder()
+    return nw_state_finder.get_switch_details(switch_id)
 
 
 @tool
-def get_path_between_nodes(source: str, destination: str) -> list[tuple[str, str]]:
+def get_path_between_nodes(source: str,
+                           destination: str,
+                           network_graph: Annotated[nx.Graph, InjectedState("network_graph")],
+                           switch_port_mappings: Annotated[dict, InjectedState("switch_port_mappings")],
+                           ) -> list[tuple[str, str]]:
     """
     Function to get a path between nodes in the network. The nodes can either be a switch or a host.
     Args:
@@ -45,13 +44,13 @@ def get_path_between_nodes(source: str, destination: str) -> list[tuple[str, str
     Switch5 port 3 (eth3) is connected to switch3 port 1 (eth1)
     Switch3 is connected to host3 via port 3 (eth3)
     """
-    network_state = NetworkState.get_instance()
 
-    shortest_path = nx.shortest_path(network_state.network_graph, source, destination)
+    shortest_path = nx.shortest_path(network_graph, source, destination)
 
     full_path = []
+
     for i in range(len(shortest_path) - 1):
-        full_path.append(network_state.switch_port_mappings[(shortest_path[i], shortest_path[i + 1])])
+        full_path.append(switch_port_mappings[(shortest_path[i], shortest_path[i + 1])])
 
     return full_path
 
@@ -198,6 +197,6 @@ def modify_all_matching_rules(switch_id: str, table_id: int, match: dict, action
 
 
 def create_tool_list(extra_funcs=None) -> list:
-    return [get_nw_state, add_rule, delete_rule_strict,
+    return [add_rule, delete_rule_strict,
             modify_rule_strict, modify_all_matching_rules,
             check_switch, get_path_between_nodes]

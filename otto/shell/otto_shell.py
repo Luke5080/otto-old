@@ -1,3 +1,5 @@
+import pyfiglet
+from colorama import Fore
 import argparse
 import atexit
 import cmd
@@ -5,14 +7,13 @@ import sys
 
 import inquirer
 import mysql.connector
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from prettytable import PrettyTable
 from rich.console import Console
 from rich.markdown import Markdown
 from yaspin import yaspin
 
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
-from otto.ryu.network_state_db.network_state import NetworkState
 from otto.ryu.ryu_environment import RyuEnvironment
 
 
@@ -23,11 +24,12 @@ class OttoShell(cmd.Cmd):
     _controller: str = None
     _agent: IntentProcessor
     _verbosity_level: str
-    _network_state: NetworkState
     _create_app_arg_parser: argparse.ArgumentParser
 
     def __init__(self, controller, agent, controller_object):
         super().__init__()
+        self.banner = pyfiglet.figlet_format('OTTO',font= 'dos_rebel')
+
         self.available_models = ["gpt-4o", "gpt-4o-mini", "llama", "deepseek", "gemini", "gpt-o3-mini"]
         self._controller = controller
         self._agent = agent
@@ -35,20 +37,21 @@ class OttoShell(cmd.Cmd):
         self._verbosity_level = "VERBOSE"
         self._controller_object = controller_object
         self._console = Console()
-        self._network_state = NetworkState.get_instance()
+
         atexit.register(self._close_network_app_db_connection)
         self._create_app_arg_parser = argparse.ArgumentParser(prog="Create a network application",
                                                               description="Add app")
         self._create_app_arg_parser.add_argument('--name', required=True, help="app name")
         self._create_app_arg_parser.add_argument('--password', required=True, help="password")
         self._database_connection = mysql.connector.connect(
-            user='root', password='root', host='localhost', port=3306, database='network_application_db'
+            user='root', password='root', host='localhost', port=3306, database='authentication_db'
         )
 
         self.prompt = "otto> "
 
         self.intro = f"""
-        Otto - Intent Based Northbound Interface for SDN Controllers
+   
+        {Fore.CYAN + self.banner + Fore.RESET}
         Author: Luke Marshall
 
         Configured model: {self._model}
@@ -62,8 +65,8 @@ class OttoShell(cmd.Cmd):
 
     def do_get_hosts(self, line):
         host_table = PrettyTable()
-        host_table_columns = list(self._network_state.host_mappings)
-        for switch, port_mapping in self._network_state.host_mappings.items():
+        host_table_columns = list(self._controller_object.network_state.host_mappings)
+        for switch, port_mapping in self._controller_object.network_state.host_mappings.items():
             connected_hosts = [f"{port}:{host}" for port, host in port_mapping.items()]
 
             host_table.add_column(host_table_columns[host_table_columns.index(switch)], connected_hosts)
@@ -110,8 +113,11 @@ class OttoShell(cmd.Cmd):
     @yaspin(text="Attempting to fulfill intent..")
     def non_verbose_output(self, intent):
         result = self._agent.graph.invoke({"messages": intent})
-
-        self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
+        for m in result['messages']:
+            print(type(m))
+            if isinstance(m, AIMessage):
+               print(m.content)
+        #self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
 
     def do_intent(self, intent):
         messages = [HumanMessage(content=intent)]
@@ -128,7 +134,7 @@ class OttoShell(cmd.Cmd):
             cursor = self._database_connection.cursor()
 
             cursor.execute(
-                f"INSERT INTO network_applications(app_name, password) VALUES(%s, %s)", (args.name, args.password)
+                f"INSERT INTO network_applications(username, password) VALUES(%s, %s)", (args.name, args.password)
             )
 
             self._database_connection.commit()

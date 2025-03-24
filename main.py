@@ -1,5 +1,3 @@
-import multiprocessing
-
 import typer
 
 from otto.api.otto_api import OttoApi
@@ -17,10 +15,19 @@ def main(model: str = typer.Option(..., prompt=True),
          controller: str = typer.Option(..., prompt=True),
          shell: bool = typer.Option(False, "--shell", is_flag=True)
          ):
-    otto_flask_api = OttoApi.get_instance()
+    # create controller factory to return our controller object
+    controller_fetcher = ControllerFactory()
+
+    # get our controller object
+    controller_env = controller_fetcher.get_controller("ryu")
+
+    # create our associated network state for our controller and start its updates.
+    controller_env.create_network_state()
+    controller_env.start_state_updater()
+
+    otto_flask_api = OttoApi()
 
     model_fetcher = ModelFactory()
-    controller_fetcher = ControllerFactory()
 
     if controller not in ["ryu", "onos"]:
         return
@@ -28,24 +35,17 @@ def main(model: str = typer.Option(..., prompt=True),
     if model not in ["gpt-4o", "gpt-o3-mini", "gpt-4o-mini", "llama", "deepseek", "gemini"]:
         return
 
-    controller = controller_fetcher.get_controller("ryu")
-
     llm = model_fetcher.get_model(model)
-
-    controller.create_network_state()
-
-    controller.start_state_updater()
 
     p = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
 
-    gm = GunicornManager.get_instance(otto_flask_api.app)
+    if not shell:
+        gm = GunicornManager(otto_flask_api.app)
 
-    api_process = multiprocessing.Process(target=gm.run)
-
-    api_process.start()
+        gm.run()
 
     if shell:
-        OttoShell("ryu", p, controller).run()
+        OttoShell("ryu", p, controller_env).run()
 
 
 if __name__ == "__main__":

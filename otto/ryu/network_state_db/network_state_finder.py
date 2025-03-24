@@ -10,6 +10,20 @@ from exceptions import (FlowRetrievalException, HostRetrievalException,
 
 
 class NetworkStateFinder:
+
+    def get_switch_details(self, switch_id: str) -> dict:
+        switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
+
+        switch_struct = {
+            "name": switch_hex_dpid,
+            "ports": self.get_ports(switch_hex_dpid),
+            "portMappings": self.get_port_mappings(switch_hex_dpid),
+            "connectedHosts": self.get_connected_hosts(switch_hex_dpid),
+            "installedFlows": self.get_installed_flows(switch_id)
+        }
+
+        return switch_struct
+
     @staticmethod
     def get_switches() -> list[int]:
         """

@@ -4,11 +4,6 @@ from abc import ABC, abstractmethod
 class ControllerEnvironment(ABC):
     @property
     @abstractmethod
-    def network_db_operator(self):
-        pass
-
-    @property
-    @abstractmethod
     def network_state(self):
         pass
 

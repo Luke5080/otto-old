@@ -1,47 +1,35 @@
-import atexit
+from typing import Union
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-from exceptions import (MultipleNetworkDbOperators, NetworkDatabaseException,
+from exceptions import (NetworkDatabaseException,
                         SwitchDocumentNotFound)
 
 
 class NetworkDbOperator:
-    _MongoConnector: MongoClient
-    object_ids: dict
-
-    __instance = None
-
-    @staticmethod
-    def get_instance():
-        if NetworkDbOperator.__instance is None:
-            NetworkDbOperator()
-        return NetworkDbOperator.__instance
+    _MongoConnector: Union[None, MongoClient]
 
     def __init__(self):
-        if NetworkDbOperator.__instance is None:
-            self._MongoConnector = MongoClient('localhost', 27017)
+        self._MongoConnector = None
+        self._network_state_db = None
+        self._switch_collection = None
 
-            if 'topology' in self._MongoConnector.list_database_names():
-                self.drop_database()
+    def connect(self):
+        """
+        Connect method to be used when wishing to connect to the network_state_db.
+        This is run after the object has been created, and created within the process which will
+        connect to the database to prevent any forking issues.
+        """
+        if self._MongoConnector is None:
+            self._MongoConnector = MongoClient('localhost', 27017)
 
             self._network_state_db = self._MongoConnector["topology"]
             self._switch_collection = self._network_state_db["switches"]
-            self.object_ids = {}
-            atexit.register(self.drop_database)
-            NetworkDbOperator.__instance = self
-
-        else:
-            raise MultipleNetworkDbOperators(
-                f"An instance of NetworkDbOperator already exists at {NetworkDbOperator.__instance}"
-            )
 
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
-
-            self.object_ids[switch_struct["name"]] = inserted_doc.inserted_id
 
             return inserted_doc.inserted_id
 
@@ -117,6 +105,7 @@ class NetworkDbOperator:
         self._MongoConnector.drop_database('topology')
 
     def dump_network_db(self) -> dict:
+
         dumped_db = {}
         for collection in self._switch_collection.find():
             del collection["_id"]
