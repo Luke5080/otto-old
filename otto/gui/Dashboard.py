@@ -95,7 +95,9 @@ def create_model_usage_pie_chart() -> Union[None, Figure]:
         fig.patch.set_alpha(0)
         ax.set_facecolor('none')
         ax.pie(y, shadow=True)
-        ax.legend(mylabels, loc="best", frameon=False)
+        legend = ax.legend(mylabels, loc="best", frameon=False)
+        for text in legend.get_texts():
+            text.set_color("white")
 
     return fig
 

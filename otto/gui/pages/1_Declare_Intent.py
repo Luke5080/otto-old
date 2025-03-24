@@ -24,6 +24,7 @@ if st.session_state.user_token is not None:
     st.header("Declare Intent")
 
     st_api_handler = ApiHandler()
+    st_api_handler.set_token(st.session_state.user_token)
 
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
