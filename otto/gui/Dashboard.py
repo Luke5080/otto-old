@@ -104,10 +104,15 @@ placeholder = st.empty()
 
 if st.session_state.user_token is None:
     with placeholder.form("login"):
-        st.markdown("#### Enter your credentials")
-        username = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        submit = st.form_submit_button("Login")
+         left_co, cent_co,last_co = st.columns(3)
+         with cent_co:
+            st.image("otto/gui/otto-banner.png")
+
+         st.markdown("#### Enter your credentials")
+         username = st.text_input("Username")
+         password = st.text_input("Password", type="password")
+
+         submit = st.form_submit_button("Login")
 
     if submit:
         authentication_response = st_api_handler.login(username, password)
