@@ -146,6 +146,13 @@ class NetworkStateUpdater(Thread):
         return updates
 
     def run(self):
+        """
+        Main method of NetworkStateUpdater thread. While the stop event is not set, every minute do the following:
+        1. Get the current network state from available Ryu APIs
+        2. Perform a comparison between the found (current) network state and the registered state in network_state_db
+        3. If a difference is found between the two, update/delete/add the respective document
+        4. Write the updates to the network_state_db
+        """
         while not self.stop_event.is_set():
             current_nw_state = {}
             for document in self._nw_state.get_network_state():

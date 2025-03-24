@@ -1,10 +1,9 @@
 from typing import Union
 
-import graphviz
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import streamlit as st
+from matplotlib.figure import Figure
 
 from otto.gui.api_handler import ApiHandler
 
@@ -75,27 +74,31 @@ def create_top_activity_df() -> Union[pd.DataFrame, None]:
 
     return top_activity_df
 
-def create_model_usage_pie_chart():
-    
+
+def create_model_usage_pie_chart() -> Union[None, Figure]:
+    """
+    Function to create a pie chart for model_usage data retrieved from /model-usage API.
+    If no data is found, the function will return None
+    """
     model_data = st_api_handler.get_model_usage()
 
     fig = None
 
     if model_data is not None:
-       y = []
-       mylabels = []
-       for model, count in model_data.items():
-           y.append(count)
-           mylabels.append(model)
+        y = []
+        mylabels = []
+        for model, count in model_data.items():
+            y.append(count)
+            mylabels.append(model)
 
-       fig, ax = plt.subplots()
-       fig.patch.set_alpha(0)
-       ax.set_facecolor('none')
-       ax.pie(y, shadow=True)
-       ax.legend(mylabels, loc="best", frameon=False)
+        fig, ax = plt.subplots()
+        fig.patch.set_alpha(0)
+        ax.set_facecolor('none')
+        ax.pie(y, shadow=True)
+        ax.legend(mylabels, loc="best", frameon=False)
 
     return fig
-        
+
 
 if "user_token" not in st.session_state:
     st.session_state.user_token = None
@@ -104,15 +107,15 @@ placeholder = st.empty()
 
 if st.session_state.user_token is None:
     with placeholder.form("login"):
-         left_co, cent_co,last_co = st.columns(3)
-         with cent_co:
+        left_co, cent_co, last_co = st.columns(3)
+        with cent_co:
             st.image("otto/gui/otto-banner.png")
 
-         st.markdown("#### Enter your credentials")
-         username = st.text_input("Username")
-         password = st.text_input("Password", type="password")
+        st.markdown("#### Enter your credentials")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
 
-         submit = st.form_submit_button("Login")
+        submit = st.form_submit_button("Login")
 
     if submit:
         authentication_response = st_api_handler.login(username, password)
@@ -157,11 +160,11 @@ if st.session_state.user_token is not None:
 
     with col[1]:
         st.subheader("Model Usage")
-   
+
         fig = create_model_usage_pie_chart()
 
         if fig is not None:
-           st.pyplot(fig, use_container_width=True)
+            st.pyplot(fig, use_container_width=True)
         else:
             st.write("No data available")
         st.subheader("Usage by users/applications")

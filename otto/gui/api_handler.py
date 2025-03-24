@@ -68,7 +68,7 @@ class ApiHandler:
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
 
-        return latest_activity_response.json().get('message', {})
+        return latest_activity_response.json().get('message', "")
 
     def get_weekly_activity(self) -> dict:
         """
@@ -87,7 +87,7 @@ class ApiHandler:
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
 
-        return weekly_activity_response.json().get('message', {})
+        return weekly_activity_response.json().get('message', "")
 
     def get_top_activity(self) -> dict:
         """
@@ -105,7 +105,7 @@ class ApiHandler:
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/latest-activity: {e}")
 
-        return top_activity_response.json().get('message', {})
+        return top_activity_response.json().get('message', "")
 
     def get_model_usage(self) -> dict:
         """
@@ -123,7 +123,7 @@ class ApiHandler:
         except Exception as e:
             raise ApiRequestError(f"Error while retrieving data from {self._api_url}/model-usage: {e}")
 
-        return model_usage_response.json().get('message', {})
+        return model_usage_response.json().get('message', "")
 
     def declare_intent(self, intent: str) -> dict:
         """

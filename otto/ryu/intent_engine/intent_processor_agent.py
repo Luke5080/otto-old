@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import Union, Optional
 
 import networkx as nx
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import SystemMessage, AIMessage
+from langchain_openai.chat_models.base import BaseChatOpenAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
 
@@ -12,12 +15,17 @@ from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedInt
 
 
 class IntentProcessor:
-    def __init__(self, model, tools, system_prompt, context="User"):
+    def __init__(self, model: Union[BaseChatOpenAI, BaseChatModel],
+                 tools: list, system_prompt: str,
+                 context: Optional[str] = "User"):
+
         self.context = context
         self.system = system_prompt
         self.tool_list = tools
+
         self.tool_node = ToolNode(self.tool_list)
         self.tools = {tool.name: tool for tool in tools}
+
         self.model = model.bind_tools(tools, tool_choice="auto")
         self.model_name = model.model_name
 
