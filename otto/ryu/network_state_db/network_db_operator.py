@@ -102,7 +102,8 @@ class NetworkDbOperator:
         return {collection['name']: collection["_id"] for collection in self._switch_collection.find()}
 
     def drop_database(self):
-        self._MongoConnector.drop_database('topology')
+        if self._MongoConnector is not None and "topology" in self._database.collection_names():
+           self._MongoConnector.drop_database('topology')
 
     def dump_network_db(self) -> dict:
 

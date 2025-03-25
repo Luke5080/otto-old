@@ -1,3 +1,4 @@
+import atexit
 from otto.controller_environment import ControllerEnvironment
 from otto.ryu.network_state_db.network_state import NetworkState
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
@@ -17,3 +18,6 @@ class RyuEnvironment(ControllerEnvironment):
 
     def stop_state_updater(self):
         self.network_state_updater.stop_event.set()
+
+    def drop_database(self):
+        self.network_state.network_db_operator.drop_database()
