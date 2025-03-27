@@ -1,10 +1,13 @@
+from otto.gui.streamlit_runner import StreamlitRunner
+
 import pyfiglet
-from colorama import Fore
+from colorama import Fore, Style
 import argparse
 import atexit
+from otto.otto_logger.logger_config import logger
 import cmd
 import sys
-
+from otto.utils import check_api_keys
 import inquirer
 import mysql.connector
 from langchain_core.messages import HumanMessage, AIMessage
@@ -12,7 +15,8 @@ from prettytable import PrettyTable
 from rich.console import Console
 from rich.markdown import Markdown
 from yaspin import yaspin
-
+from otto.api.otto_api import OttoApi
+from otto.api.otto_gunicorn import GunicornManager
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.ryu.ryu_environment import RyuEnvironment
 
@@ -26,7 +30,7 @@ class OttoShell(cmd.Cmd):
     _verbosity_level: str
     _create_app_arg_parser: argparse.ArgumentParser
 
-    def __init__(self, controller, agent, controller_object):
+    def __init__(self, controller, agent, controller_object, api_endpoints, dashboard):
         super().__init__()
         self.banner = pyfiglet.figlet_format('OTTO',font= 'dos_rebel')
 
@@ -38,27 +42,77 @@ class OttoShell(cmd.Cmd):
         self._controller_object = controller_object
         self._console = Console()
 
+        self._api_endpoints = api_endpoints
+        self._dashboard = dashboard
+
         atexit.register(self._close_network_app_db_connection)
         self._create_app_arg_parser = argparse.ArgumentParser(prog="Create a network application",
                                                               description="Add app")
         self._create_app_arg_parser.add_argument('--name', required=True, help="app name")
         self._create_app_arg_parser.add_argument('--password', required=True, help="password")
+
+        self._api_endpoint_arg_parser = argparse.ArgumentParser(prog="Turn on the REST APIs to be used by nework applications and the Otto Dashboard",
+                                                              description="Enable REST APIs")
+        self._api_endpoint_arg_parser.add_argument('--models', required=False, nargs="+", help="Models to be used in IntentProcessorPool. Instances of the IntentProcessor will be configured in an object pool with the desired models.")
+        self._api_endpoint_arg_parser.add_argument('--pool-size', required=False, help="Size of the IntentProcessorPool to be used to serve API Requests. The pool will be created with the defined size / the amount of models specified")
         self._database_connection = mysql.connector.connect(
             user='root', password='root', host='localhost', port=3306, database='authentication_db'
         )
 
+        self._otto_api = None
+
+        self._gm = None
+
         self.prompt = "otto> "
 
         self.intro = f"""
-   
-        {Fore.CYAN + self.banner + Fore.RESET}
+        {Fore.CYAN + self.banner}
+
+        {Style.BRIGHT}
         Author: Luke Marshall
 
         Configured model: {self._model}
         Configured Controller: {self._controller}
 
+        API Endpoint Status: {'ON' if self._api_endpoints else 'OFF'}
+        Dashboard Status: {'ON' if self._dashboard else 'OFF'}
+
         Agent Output Verbosity Level: {self._verbosity_level}
+
+       {Fore.RESET}
         """
+
+    def do_start_api(self, args):
+        if self._api_endpoints:
+            print(f"{Fore.RED + 'API endpoints are currently on and are running on http://localhost:5000' + Fore.RESET}")
+
+        else:
+            args = self._api_endpoint_arg_parser.parse_args(args.split())
+            self._otto_api = OttoApi()
+
+            if args.pool_size:
+               self._otto_api.intent_processor_pool.pool_size = int(args.pool_size)
+            if args.models:
+               otto_api.intent_processor_pool.models = args.pool_models
+
+            self._gm = GunicornManager(self._otto_api.app)
+
+            self._otto_api.intent_processor_pool.create_pool()
+            self._api_endpoints = True
+
+            self._gm.start_in_background()
+            print(f"{Fore.GREEN + 'Started REST APIs. Available on http://localhost:5000' + Fore.RESET}")
+
+    def do_start_gui(self, line):
+        if not self._api_endpoints:
+           print(f"{Fore.RED + 'Cannot start dashboard as API endpoints are turned off. Please use the command start_api to start the API endpoints' + Fore.RESET}")
+           return
+        self._gui_runner = StreamlitRunner()
+
+        self._gui_runner.start_streamlit()
+
+        self._dashboard = True
+        print(f"{Fore.GREEN + 'Dashboard started and available at http://localhost:8501' + Fore.RESET}")
 
     def do_get_model(self, line):
         print(self._model)
@@ -149,6 +203,7 @@ class OttoShell(cmd.Cmd):
         sys.exit(0)
 
     def run(self):
+        check_api_keys()
         shell_exit = False
         while not shell_exit:
             try:
@@ -161,6 +216,9 @@ class OttoShell(cmd.Cmd):
 
     def postloop(self):
         return True
+
+    def emptyline(self):
+        pass
 
     def _close_network_app_db_connection(self) -> None:
         self._database_connection.close()

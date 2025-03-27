@@ -13,14 +13,16 @@ from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedInt
 
 class OttoApi:
     _app: Flask
-    _intent_processor_pool: IntentProcessorPool
+    intent_processor_pool: IntentProcessorPool
     _authentication_db_pool = AuthenticationDbConnPool
 
-    def __init__(self):
+    def __init__(self, models: list[str] =None, pool_size: int=None):
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database
-        self._intent_processor_pool = IntentProcessorPool()
+
+        self.intent_processor_pool = IntentProcessorPool()
+
         self._authentication_db_pool = AuthenticationDbConnPool()
 
         self._create_routes()
@@ -125,9 +127,9 @@ class OttoApi:
                 return jsonify({'message': 'No intent found'}), 403
 
             if 'model' not in intent_request:
-                designated_processor = self._intent_processor_pool.get_intent_processor('gpt-4o')
+                designated_processor = self.intent_processor_pool.get_intent_processor('gpt-4o')
             else:
-                designated_processor = self._intent_processor_pool.get_intent_processor(intent_request['model'])
+                designated_processor = self.intent_processor_pool.get_intent_processor(intent_request['model'])
 
             designated_processor.context = token_data.get("app", {})
 
@@ -141,7 +143,7 @@ class OttoApi:
                 if isinstance(m, AIMessage):
                     resp += m.content + " "
 
-            self._intent_processor_pool.return_intent_processor(designated_processor)
+            self.intent_processor_pool.return_intent_processor(designated_processor)
 
             if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':
                 return jsonify({'message': resp, 'operations': result['operations']})

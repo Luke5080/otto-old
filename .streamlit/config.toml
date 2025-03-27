@@ -3,3 +3,6 @@ base="dark"
 
 [client]
 toolbarMode="viewer"
+
+[server]
+headless = true

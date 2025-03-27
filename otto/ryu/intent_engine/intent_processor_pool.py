@@ -13,12 +13,11 @@ class IntentProcessorPool:
     def __init__(self, size: Optional[int] = 6,
                  models: Optional[list[str]] = ["gpt-4o", "deepseek"]):
         self.pool = []
-        self._models = models
-        self._pool_size = size
+        self.models = models
+        self.pool_size = size
         self._model_fetcher = ModelFactory()
-        self._create_pool()
 
-    def _create_pool(self):
+    def create_pool(self):
         """
         Method to create object pool of size set in pool attribute and create pool with
         models specified in models attribute
@@ -26,10 +25,10 @@ class IntentProcessorPool:
 
         # if pool size % length of model list != 0, then the pool size will be automatically scaled down
         # I have no ideas what do to do otherwise without adding some extra complexity to this class
-        model_distribution = self._pool_size // len(self._models)
+        model_distribution = self.pool_size // len(self.models)
 
-        for i in range(len(self._models)):
-            model = self._model_fetcher.get_model(self._models[i])
+        for i in range(len(self.models)):
+            model = self._model_fetcher.get_model(self.models[i])
             for _ in range(model_distribution):
                 self.pool.append(IntentProcessor(model, create_tool_list(), intent_processor_prompt))
 

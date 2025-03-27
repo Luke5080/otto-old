@@ -12,9 +12,11 @@ class GunicornManager(BaseApplication):
         self.options = {
             "bind": f"{self.host}:{self.port}",
             "workers": multiprocessing.cpu_count() * 2,  # maybe an overshoot
-            "timeout": 180
+            "timeout": 180,
+            "loglevel": "critical" # supress all messages except critical to avoid messages being displaying when running with OttoShell
         }
 
+        self.process = None
         super().__init__()
 
     def load_config(self):
@@ -23,3 +25,18 @@ class GunicornManager(BaseApplication):
 
     def load(self):
         return self._app
+
+    def start_in_background(self):
+        if self.process is None or not self.process.is_alive():
+            self.process = multiprocessing.Process(target=self.run, daemon=True)
+            self.process.start()
+        else:
+            print("Gunicorn is already running.")
+
+    def stop(self):
+        """Stops Gunicorn if it's running."""
+        if self.process and self.process.is_alive():
+            self.process.terminate()
+            self.process.join()
+        else:
+            print("No active Gunicorn process.")
