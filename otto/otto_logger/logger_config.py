@@ -4,6 +4,7 @@ project progresses. I have no time to create a sophisticated logger right now
 """
 
 import logging
+
 import colorlog
 
 formatter = colorlog.ColoredFormatter(
@@ -26,9 +27,8 @@ handler.setFormatter(formatter)
 logger = logging.getLogger("otto_logger")
 
 if not logger.hasHandlers():
-   logger.addHandler(handler)
+    logger.addHandler(handler)
 
 logger.setLevel(logging.INFO)
-
 
 logging.getLogger("requests").setLevel(logging.CRITICAL)

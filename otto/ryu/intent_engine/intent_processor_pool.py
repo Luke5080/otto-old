@@ -12,6 +12,7 @@ class IntentProcessorPool:
 
     def __init__(self, size: Optional[int] = 6,
                  models: Optional[list[str]] = ["gpt-4o", "deepseek"]):
+
         self.pool = []
         self.models = models
         self.pool_size = size
