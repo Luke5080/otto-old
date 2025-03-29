@@ -16,7 +16,7 @@ class OttoApi:
     intent_processor_pool: IntentProcessorPool
     _authentication_db_pool = AuthenticationDbConnPool
 
-    def __init__(self, models: list[str] =None, pool_size: int=None):
+    def __init__(self, models: list[str] = None, pool_size: int = None):
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database

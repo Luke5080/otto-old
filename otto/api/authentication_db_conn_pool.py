@@ -1,5 +1,5 @@
 import mysql.connector
-import runpy
+
 
 class AuthenticationDbConnPool:
     def __init__(self):
@@ -11,4 +11,3 @@ class AuthenticationDbConnPool:
                                                                 pool_size=3,
                                                                 autocommit=True,
                                                                 **self._db_config)
-
