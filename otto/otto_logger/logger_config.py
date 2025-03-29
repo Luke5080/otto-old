@@ -29,6 +29,6 @@ logger = logging.getLogger("otto_logger")
 if not logger.hasHandlers():
     logger.addHandler(handler)
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 logging.getLogger("requests").setLevel(logging.CRITICAL)

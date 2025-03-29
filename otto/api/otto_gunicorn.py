@@ -4,7 +4,6 @@ from gunicorn.app.base import BaseApplication
 
 from otto.otto_logger.logger_config import logger
 
-
 class GunicornManager(BaseApplication):
 
     def __init__(self, flask_app):

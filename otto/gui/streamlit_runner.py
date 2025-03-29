@@ -32,9 +32,10 @@ class StreamlitRunner():
         """
         Stop the streamlit process if it exists by sending SIGTERM to running process
         """
+        logger.debug("Stopping OttoShell..")
         if self.pid or self.process is not None:
             try:
                 os.kill(self.pid, signal.SIGTERM)
-
+                logger.debug("OttoShell stopped")
             except ProcessLookupError:
-                print("Streamlit is not running")
+                logger.debug("Streamlit is not running")
