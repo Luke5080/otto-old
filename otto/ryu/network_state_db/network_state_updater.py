@@ -10,9 +10,8 @@ from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 class NetworkStateUpdater(Thread):
     _nw_db: NetworkDbOperator
 
-    def __init__(self, nw_state):
+    def __init__(self):
         super().__init__()
-        self._nw_state = nw_state
         self._nw_db = NetworkDbOperator()
         self._nw_db.connect()
 
@@ -155,10 +154,10 @@ class NetworkStateUpdater(Thread):
         """
         while not self.stop_event.is_set():
             current_nw_state = {}
-            for document in self._nw_state.get_network_state():
+            for document in self._nw_db.get_network_state():
                 current_nw_state[document["name"]] = document
 
-            diff_found = DeepDiff(self._nw_state.get_registered_state(), current_nw_state)
+            diff_found = DeepDiff(self._nw_db.dump_network_db(), current_nw_state)
 
             if diff_found:
 
@@ -183,3 +182,4 @@ class NetworkStateUpdater(Thread):
                     self._nw_db.bulk_update(network_state_db_updates)
 
             self.stop_event.wait(60)
+

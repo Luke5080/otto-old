@@ -54,6 +54,8 @@ class IntentProcessor:
 
         self.graph = graph.compile()
 
+        self.graph.get_graph().draw_png()
+
     def construct_network_state(self, state: AgentState):
         """
         Method to construct the network state to be used by a single agent during an intent fulfilment operation.

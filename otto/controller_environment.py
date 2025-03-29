@@ -4,12 +4,7 @@ from abc import ABC, abstractmethod
 class ControllerEnvironment(ABC):
     @property
     @abstractmethod
-    def network_state(self):
-        pass
-
-    @property
-    @abstractmethod
-    def network_state_finder(self):
+    def network_db_operator(self):
         pass
 
     @property
@@ -24,3 +19,13 @@ class ControllerEnvironment(ABC):
     @abstractmethod
     def start_state_updater(self):
         pass
+
+    @abstractmethod
+    def stop_state_updater(self):
+        pass
+
+    @abstractmethod
+    def drop_database(self):
+        pass
+
+
