@@ -1,5 +1,6 @@
 import multiprocessing
-
+import atexit
+from otto.otto_logger.logger_config import logger
 from gunicorn.app.base import BaseApplication
 
 
@@ -13,7 +14,9 @@ class GunicornManager(BaseApplication):
             "bind": f"{self.host}:{self.port}",
             "workers": multiprocessing.cpu_count() * 2,  # maybe an overshoot
             "timeout": 180,
-            "loglevel": "critical" # supress all messages except critical to avoid messages being displaying when running with OttoShell
+            "loglevel": "critical", # supress all messages except critical to avoid messages being displaying when running with OttoShell
+            "on_starting": self._log_master_pid,
+            "post_fork": self._log_worker_pid
         }
 
         self.process = None
@@ -40,3 +43,9 @@ class GunicornManager(BaseApplication):
             self.process.join()
         else:
             print("No active Gunicorn process.")
+
+    def _log_master_pid(self, server):
+        logger.info(f"Gunicorn Master started. PID {server.pid}")
+
+    def _log_worker_pid(self, server, worker):
+        logger.info(f"Gunicorn Worker started. PID {worker.pid}")

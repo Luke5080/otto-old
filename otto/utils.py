@@ -23,6 +23,7 @@ def create_shell_banner(model: str, controller: str, api_endpoints: bool,
                         dashboard: bool, verbosity_level: str):
 
     banner = f"""
+    {Fore.CYAN}
     {pyfiglet.figlet_format('OTTO', font='dos_rebel')}
     
     {Style.BRIGHT}

@@ -1,5 +1,5 @@
 import argparse
-
+import psutil
 from otto.api.otto_api import OttoApi
 from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_factory import ControllerFactory
@@ -92,7 +92,7 @@ def main():
 
     if args.shell:
         otto_shell_intent_processor = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
-        OttoShell("ryu", otto_shell_intent_processor, controller_env, args.api, args.gui).run()
+        OttoShell("ryu", controller_env,otto_shell_intent_processor, args.api, args.gui).run()
 
 
 if __name__ == "__main__":

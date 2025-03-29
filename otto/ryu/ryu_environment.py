@@ -11,6 +11,7 @@ class RyuEnvironment(ControllerEnvironment):
     network_db_operator.connect()
 
     def __init__(self):
+        atexit.register(self.drop_database)
         atexit.register(self.stop_state_updater)
 
     def create_network_state(self):

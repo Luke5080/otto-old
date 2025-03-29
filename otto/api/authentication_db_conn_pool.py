@@ -12,4 +12,3 @@ class AuthenticationDbConnPool:
                                                                 autocommit=True,
                                                                 **self._db_config)
 
-        runpy.run_module()

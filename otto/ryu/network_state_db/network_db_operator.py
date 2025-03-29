@@ -1,6 +1,6 @@
 from typing import Union
-
-from pymongo import MongoClient
+from bson import ObjectId
+from pymongo import MongoClient, InsertOne
 from pymongo.errors import PyMongoError
 
 from exceptions import (NetworkDatabaseException,
@@ -53,9 +53,13 @@ class NetworkDbOperator:
         """
         self.drop_database()  # delete topology collection if it already exists
 
-        for found_switch in self.get_network_state():
-            self.put_switch_to_db(found_switch)
+        switches  = []
 
+        for found_switch in self.get_network_state():
+            found_switch['_id'] = ObjectId()
+            switches.append(InsertOne(found_switch))
+
+        self._switch_collection.bulk_write(switches)
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)
@@ -131,7 +135,7 @@ class NetworkDbOperator:
         return {collection['name']: collection["_id"] for collection in self._switch_collection.find()}
 
     def drop_database(self):
-        if self._MongoConnector is not None and "topology" in self._network_state_db.list_collection_names():
+        if self._MongoConnector is not None and "switches" in self._network_state_db.list_collection_names():
             self._MongoConnector.drop_database("topology")
 
     def dump_network_db(self) -> dict:

@@ -1,6 +1,5 @@
 import hashlib
 import json
-
 import requests
 from requests.exceptions import ConnectionError, HTTPError
 
