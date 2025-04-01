@@ -7,13 +7,14 @@ from typing import Union
 import inquirer
 import mysql.connector
 from colorama import Fore
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage
 from mysql.connector.abstracts import MySQLConnectionAbstract
 from prettytable import PrettyTable
 from rich.console import Console
 from rich.markdown import Markdown
 from yaspin import yaspin
-from langchain_anthropic import ChatAnthropic
+
 from otto.api.otto_api import OttoApi
 from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_environment import ControllerEnvironment
@@ -26,7 +27,7 @@ from otto.utils import create_shell_banner
 class OttoShell(cmd.Cmd):
     _console: Console
     _model: str = None
-    _controller_object: ControllerEnvironment  # FIXME
+    _controller_object: ControllerEnvironment
     _controller_name: str = None
     _agent: IntentProcessor
     _verbosity_level: str
@@ -35,6 +36,7 @@ class OttoShell(cmd.Cmd):
     _database_connection: MySQLConnectionAbstract
     _otto_api: Union[None, OttoApi]
     _gm: Union[None, GunicornManager]
+    _gui_runner: Union[None, StreamlitRunner]
 
     def __init__(self, controller_name: str,
                  controller_object: ControllerEnvironment,
@@ -44,8 +46,8 @@ class OttoShell(cmd.Cmd):
 
         super().__init__()
 
-        self._gui_runner = None
-        self.available_models = {"gpt-4o": "RECOMMENDED", "gpt-4o-mini": "NOT RECOMMENDED", "gpt-o3-mini": "UNSTABLE", "deepseek-chat": "RECOMMENDED"}
+        self.available_models = {"gpt-4o": "RECOMMENDED", "gpt-4o-mini": "NOT RECOMMENDED", "gpt-o3-mini": "UNSTABLE",
+                                 "deepseek-chat": "RECOMMENDED"}
 
         self._controller_name = controller_name
         self._controller_object = controller_object
@@ -77,6 +79,7 @@ class OttoShell(cmd.Cmd):
 
         self._otto_api = None
         self._gm = None
+        self._gui_runner = None
 
         self.prompt = "otto> "
 
@@ -139,7 +142,8 @@ class OttoShell(cmd.Cmd):
             self._agent.change_model(model)
         else:
             print("Model recommendations are based off the evaluation carried out. Results can be found here: ...")
-            model_choice = inquirer.list_input("Available Models:", choices=[f"[{v}]:{k}" for k, v in self.available_models.items()])
+            model_choice = inquirer.list_input("Available Models:",
+                                               choices=[f"[{v}]:{k}" for k, v in self.available_models.items()])
             self._agent.change_model(model_choice.split(":")[1])
 
         self._model = self._agent.model.model_name
@@ -174,12 +178,9 @@ class OttoShell(cmd.Cmd):
 
     def non_verbose_output(self, intent):
         with yaspin(text="Attempting to fulfill intent..", color="cyan") as sp:
-             result = self._agent.graph.invoke({"messages": intent})
-             sp.ok()
-        for m in result['messages']:
-            if isinstance(m, AIMessage):
-                print(m)
-        # self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
+            result = self._agent.graph.invoke({"messages": intent})
+            sp.ok()
+        self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
 
     def do_intent(self, intent):
         messages = [HumanMessage(content=intent)]

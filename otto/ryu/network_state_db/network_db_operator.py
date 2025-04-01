@@ -1,4 +1,5 @@
 from typing import Union
+
 from bson import ObjectId
 from pymongo import MongoClient, InsertOne
 from pymongo.errors import PyMongoError
@@ -53,13 +54,14 @@ class NetworkDbOperator:
         """
         self.drop_database()  # delete topology collection if it already exists
 
-        switches  = []
+        switches = []
 
         for found_switch in self.get_network_state():
             found_switch['_id'] = ObjectId()
             switches.append(InsertOne(found_switch))
 
         self._switch_collection.bulk_write(switches)
+
     def put_switch_to_db(self, switch_struct: dict) -> None:
         try:
             inserted_doc = self._switch_collection.insert_one(switch_struct)

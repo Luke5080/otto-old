@@ -182,4 +182,3 @@ class NetworkStateUpdater(Thread):
                     self._nw_db.bulk_update(network_state_db_updates)
 
             self.stop_event.wait(60)
-

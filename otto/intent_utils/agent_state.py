@@ -1,5 +1,6 @@
 import operator
 from typing import Annotated, TypedDict
+
 import networkx as nx
 from langchain_core.messages import AnyMessage
 

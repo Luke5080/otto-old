@@ -2,12 +2,13 @@ from datetime import datetime
 from typing import Union, Optional
 
 import networkx as nx
+from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import SystemMessage, AIMessage, merge_message_runs
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
-from langchain_anthropic import ChatAnthropic
+
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
@@ -27,7 +28,8 @@ class IntentProcessor:
         self.tools = {tool.name: tool for tool in tools}
 
         self.model = model.bind_tools(tools, tool_choice="auto")
-        self.model_name = model.model_name if not isinstance(model, ChatAnthropic) else model.model # silly ChatAnthropic shenanigans
+        self.model_name = model.model_name if not isinstance(model,
+                                                             ChatAnthropic) else model.model  # silly ChatAnthropic shenanigans
 
         self.model_factory = ModelFactory()
 
@@ -102,7 +104,9 @@ class IntentProcessor:
 
         messages = state['messages']
 
-        messages = [SystemMessage(content=self.system)] + [SystemMessage(content=f"Current Network State:\n{state['network_state']}")] + messages
+        # need to reformat this way so that ChatAnthropic doesn't complain..
+        messages = [SystemMessage(content=self.system)] + [
+            SystemMessage(content=f"Current Network State:\n{state['network_state']}")] + messages
 
         messages = merge_message_runs(messages)
 
