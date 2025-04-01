@@ -1,5 +1,5 @@
 import argparse
-
+import time
 from otto.api.otto_api import OttoApi
 from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_factory import ControllerFactory
@@ -48,7 +48,7 @@ def main():
             logger.info("Please provide a model to use with OttoShell")
             return
 
-        if args.shell_model not in ["gpt-4o", "gpt-o3-mini", "gpt-4o-mini", "llama", "deepseek", "gemini"]:
+        if args.shell_model not in ["gpt-4o", "gpt-o3-mini", "gpt-4o-mini", "deepseek-chat", "claude-3-5-sonnet"]:
             logger.info(f"Model {args.shell_model} cannot be used with Otto.")
             return
 
@@ -91,7 +91,8 @@ def main():
         logger.info("Started Dashboard: Visit http://localhost:8501")
 
     if args.shell:
-        otto_shell_intent_processor = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "User")
+        otto_shell_intent_processor = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "admin")
+        time.sleep(0.7) # ultimate groundbreaking fix to prevent logs overlapping shell when running both REST  APIs and GUI at the same time.
         OttoShell("ryu", controller_env, otto_shell_intent_processor, args.api, args.gui).run()
 
 

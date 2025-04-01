@@ -13,7 +13,7 @@ from prettytable import PrettyTable
 from rich.console import Console
 from rich.markdown import Markdown
 from yaspin import yaspin
-
+from langchain_anthropic import ChatAnthropic
 from otto.api.otto_api import OttoApi
 from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_environment import ControllerEnvironment
@@ -45,13 +45,13 @@ class OttoShell(cmd.Cmd):
         super().__init__()
 
         self._gui_runner = None
-        self.available_models = ["gpt-4o", "gpt-4o-mini", "llama", "deepseek", "gemini", "gpt-o3-mini"]
+        self.available_models = {"gpt-4o": "RECOMMENDED", "gpt-4o-mini": "NOT RECOMMENDED", "gpt-o3-mini": "UNSTABLE", "deepseek-chat": "RECOMMENDED"}
 
         self._controller_name = controller_name
         self._controller_object = controller_object
 
         self._agent = agent
-        self._model = agent.model.model_name
+        self._model = agent.model_name if not isinstance(agent.model, ChatAnthropic) else agent.model.model
 
         self._verbosity_level = "VERBOSE"
         self._console = Console()
@@ -135,11 +135,12 @@ class OttoShell(cmd.Cmd):
         print(host_table)
 
     def do_set_model(self, model):
-        if model and model in self.available_models:
+        if model and model in self.available_models.keys():
             self._agent.change_model(model)
         else:
-            model_choice = inquirer.list_input("Available Models:", choices=self.available_models)
-            self._agent.change_model(model_choice)
+            print("Model recommendations are based off the evaluation carried out. Results can be found here: ...")
+            model_choice = inquirer.list_input("Available Models:", choices=[f"[{v}]:{k}" for k, v in self.available_models.items()])
+            self._agent.change_model(model_choice.split(":")[1])
 
         self._model = self._agent.model.model_name
         print(f"Changed model to {self._model}")
@@ -164,20 +165,20 @@ class OttoShell(cmd.Cmd):
             for key, value in output.items():
                 if 'messages' in value:
                     self._console.print(Markdown(f"**STEP: {key.replace('_', ' ').upper()}**"))
-                    self._console.print(Markdown(value['messages'][-1].content))
+                    self._console.print(Markdown((value['messages'][-1].content)))
                 if 'intent_understanding' in value:
-                    self._console.print(Markdown(value['intent_understanding'].content))
+                    self._console.print(Markdown(str(value['intent_understanding'].content)))
 
                 if 'operations' in value:
                     self._console.print(Markdown(f"**Operations completed**:\n{value['operations']}"))
 
-    @yaspin(text="Attempting to fulfill intent..")
     def non_verbose_output(self, intent):
-        result = self._agent.graph.invoke({"messages": intent})
+        with yaspin(text="Attempting to fulfill intent..", color="cyan") as sp:
+             result = self._agent.graph.invoke({"messages": intent})
+             sp.ok()
         for m in result['messages']:
-            print(type(m))
             if isinstance(m, AIMessage):
-                print(m.content)
+                print(m)
         # self._console.print(Markdown(f"**Operations completed:**\n{result['operations']}"))
 
     def do_intent(self, intent):

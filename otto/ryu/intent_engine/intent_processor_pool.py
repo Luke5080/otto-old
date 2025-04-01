@@ -11,7 +11,7 @@ class IntentProcessorPool:
     _model_fetcher: ModelFactory
 
     def __init__(self, size: Optional[int] = 6,
-                 models: Optional[list[str]] = ["gpt-4o", "deepseek"]):
+                 models: Optional[list[str]] = ["gpt-4o", "deepseek-chat"]):
 
         self.pool = []
         self.models = models
