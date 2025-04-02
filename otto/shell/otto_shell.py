@@ -20,20 +20,27 @@ from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_environment import ControllerEnvironment
 from otto.gui.streamlit_runner import StreamlitRunner
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.utils import check_api_keys
 from otto.utils import create_shell_banner
 
 
 class OttoShell(cmd.Cmd):
+    _controller_name: str = None
+    _controller_object: ControllerEnvironment
+    _agent: IntentProcessor
+    _api_endpoints: bool
+    _dashboard: bool
+
     _console: Console
     _model: str = None
-    _controller_object: ControllerEnvironment
-    _controller_name: str = None
-    _agent: IntentProcessor
     _verbosity_level: str
     _create_app_arg_parser: argparse.ArgumentParser
     _api_endpoint_arg_parser: argparse.ArgumentParser
     _database_connection: MySQLConnectionAbstract
+    available_models: dict
+    _network_state_db: NetworkDbOperator
+
     _otto_api: Union[None, OttoApi]
     _gm: Union[None, GunicornManager]
     _gui_runner: Union[None, StreamlitRunner]
@@ -73,9 +80,11 @@ class OttoShell(cmd.Cmd):
                                                    help="Models to be used in IntentProcessorPool. Instances of the IntentProcessor will be configured in an object pool with the desired models.")
         self._api_endpoint_arg_parser.add_argument('--pool-size', required=False,
                                                    help="Size of the IntentProcessorPool to be used to serve API Requests. The pool will be created with the defined size / the amount of models specified")
-        self._database_connection = mysql.connector.connect(
+
+        self._auth_database_connection = mysql.connector.connect(
             user='root', password='root', host='localhost', port=3306, database='authentication_db'
         )
+        self._network_state_db = NetworkDbOperator()
 
         self._otto_api = None
         self._gm = None
@@ -90,6 +99,7 @@ class OttoShell(cmd.Cmd):
         atexit.register(self._close_network_app_db_connection)
 
     def do_start_api(self, args):
+        """ Start the REST API Endpoints """
         if self._api_endpoints:
             print(
                 f"{Fore.RED + 'API endpoints are currently on and are running on http://localhost:5000' + Fore.RESET}")
@@ -112,6 +122,7 @@ class OttoShell(cmd.Cmd):
             print(f"{Fore.GREEN + 'Started REST APIs. Available on http://localhost:5000' + Fore.RESET}")
 
     def do_start_gui(self, line):
+        """ Start the GUI """
         if not self._api_endpoints:
             print(
                 f"{Fore.RED + 'Cannot start dashboard as API endpoints are turned off. Please use the command start_api to start the API endpoints' + Fore.RESET}")
@@ -125,12 +136,25 @@ class OttoShell(cmd.Cmd):
         print(f"{Fore.GREEN + 'Dashboard started and available at http://localhost:8501' + Fore.RESET}")
 
     def do_get_model(self, line):
+        """Print the model which is being used in the IntentProcessor instance"""
         print(self._model)
 
     def do_get_hosts(self, line):
+        """ Get all the current found hosts in the network """
+        self._network_state_db.connect()
+        network_state = self._network_state_db.dump_network_db()
+
+        host_mappings = {}
+
+        for switch, data in network_state.items():
+            for switch_port, remote_host in switch.get('connectedHosts', {}).items():
+                host_id = remote_host['id']
+                host_mappings[switch] = {}
+                host_mappings[switch][switch_port] = host_id
+
         host_table = PrettyTable()
-        host_table_columns = list(self._controller_object.network_state.host_mappings)
-        for switch, port_mapping in self._controller_object.network_state.host_mappings.items():
+        host_table_columns = list(host_mappings.keys())
+        for switch, port_mapping in host_mappings.items():
             connected_hosts = [f"{port}:{host}" for port, host in port_mapping.items()]
 
             host_table.add_column(host_table_columns[host_table_columns.index(switch)], connected_hosts)
@@ -138,6 +162,7 @@ class OttoShell(cmd.Cmd):
         print(host_table)
 
     def do_set_model(self, model):
+        """Change the model which is being used in the IntentProcessor agent"""
         if model and model in self.available_models.keys():
             self._agent.change_model(model)
         else:
@@ -150,12 +175,14 @@ class OttoShell(cmd.Cmd):
         print(f"Changed model to {self._model}")
 
     def do_set_controller(self, controller):
+        """Change the controller being used with Otto. Not implemented yet."""
         if controller and controller in ["ryu", "onos"]:
             self._controller_object = controller
         else:
             self._controller_object = inquirer.list_input("Supported Controllers:", choices=["ryu", "onos"])
 
     def do_set_verbosity(self, verbosity):
+        """ Set the verbosity level of the output of the IntentProcessor agent"""
         if verbosity and verbosity in ["LOW", "VERBOSE"]:
             self._verbosity_level = verbosity
         else:
@@ -170,11 +197,10 @@ class OttoShell(cmd.Cmd):
                 if 'messages' in value:
                     self._console.print(Markdown(f"**STEP: {key.replace('_', ' ').upper()}**"))
                     if isinstance(value['messages'][-1].content, str):
-                       self._console.print(Markdown(value['messages'][-1].content))
-                    else:
-                       self._console.print(Markdown(value['messages'][-1].content[0].get('text','')))
+                        self._console.print(Markdown(value['messages'][-1].content))
+                    elif isinstance(value['messages'][-1].content, list):
+                        self._console.print(Markdown(value['messages'][-1].content[0].get('text', '')))
 
-   
     def non_verbose_output(self, intent):
         with yaspin(text="Attempting to fulfill intent..", color="cyan") as sp:
             result = self._agent.graph.invoke({"messages": intent})
@@ -193,13 +219,11 @@ class OttoShell(cmd.Cmd):
         try:
             args = self._create_app_arg_parser.parse_args(args.split())
 
-            cursor = self._database_connection.cursor()
+            cursor = self._auth_database_connection.cursor()
 
             cursor.execute(
                 f"INSERT INTO network_applications(username, password) VALUES(%s, %s)", (args.name, args.password)
             )
-
-            self._database_connection.commit()
 
             cursor.fetchall()
 
