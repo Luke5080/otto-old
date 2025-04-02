@@ -27,5 +27,3 @@ class ControllerEnvironment(ABC):
     @abstractmethod
     def drop_database(self):
         pass
-
-

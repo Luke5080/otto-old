@@ -122,7 +122,7 @@ class ProcessedIntentsDbOperator:
     def register_model_usage(self, model: str) -> dict:
         collection = self.database['model_usage']
 
-        collection.update_one({ 'model' : model}, { '$inc': {'count': 1} }, upsert=True)
+        collection.update_one({'model': model}, {'$inc': {'count': 1}}, upsert=True)
 
     def get_model_usage(self) -> dict:
         collection = self.database['model_usage']
@@ -133,4 +133,3 @@ class ProcessedIntentsDbOperator:
             model_usage[col['model']] = col['count']
 
         return model_usage
-        

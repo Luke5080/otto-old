@@ -1,7 +1,7 @@
 import atexit
 
-from otto.otto_logger.logger_config import logger
 from otto.controller_environment import ControllerEnvironment
+from otto.otto_logger.logger_config import logger
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
 
