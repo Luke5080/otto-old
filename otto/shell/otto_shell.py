@@ -165,13 +165,12 @@ class OttoShell(cmd.Cmd):
             for key, value in output.items():
                 if 'messages' in value:
                     self._console.print(Markdown(f"**STEP: {key.replace('_', ' ').upper()}**"))
-                    self._console.print(Markdown((value['messages'][-1].content)))
-                if 'intent_understanding' in value:
-                    self._console.print(Markdown(str(value['intent_understanding'].content)))
+                    if isinstance(value['messages'][-1].content, str):
+                       self._console.print(Markdown(value['messages'][-1].content))
+                    else:
+                       self._console.print(Markdown(value['messages'][-1].content[0].get('text','')))
 
-                if 'operations' in value:
-                    self._console.print(Markdown(f"**Operations completed**:\n{value['operations']}"))
-
+   
     def non_verbose_output(self, intent):
         with yaspin(text="Attempting to fulfill intent..", color="cyan") as sp:
              result = self._agent.graph.invoke({"messages": intent})
