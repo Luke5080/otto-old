@@ -149,15 +149,16 @@ class OttoShell(cmd.Cmd):
         for switch, data in network_state.items():
             for switch_port, remote_host in network_state[switch].get('connectedHosts', {}).items():
                 host_id = remote_host['id']
-                host_mappings[switch] = {}
+                if switch not in host_mappings:
+                   host_mappings[switch] = {}
                 host_mappings[switch][switch_port] = host_id
+        print(host_mappings)
 
         host_table = PrettyTable()
-        host_table_columns = list(host_mappings.keys())
+        host_table.field_names = ["Switch", "Host", "Port"]
         for switch, port_mapping in host_mappings.items():
-            connected_hosts = [f"{port}:{host}" for port, host in port_mapping.items()]
-
-            host_table.add_column(host_table_columns[host_table_columns.index(switch)], connected_hosts)
+            for port, host in port_mapping.items():
+                host_table.add_row([switch, host, port])
 
         print(host_table)
 
