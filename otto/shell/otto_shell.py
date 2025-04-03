@@ -21,7 +21,6 @@ from otto.controller_environment import ControllerEnvironment
 from otto.gui.streamlit_runner import StreamlitRunner
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-from otto.utils import check_api_keys
 from otto.utils import create_shell_banner
 
 
@@ -150,7 +149,7 @@ class OttoShell(cmd.Cmd):
             for switch_port, remote_host in network_state[switch].get('connectedHosts', {}).items():
                 host_id = remote_host['id']
                 if switch not in host_mappings:
-                   host_mappings[switch] = {}
+                    host_mappings[switch] = {}
                 host_mappings[switch][switch_port] = host_id
         print(host_mappings)
 

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 import networkx as nx
 import requests
@@ -162,8 +162,8 @@ def modify_rule_strict(switch_id: str, table_id: int, match: dict, actions: list
 
 
 @tool
-def modify_all_matching_rules(switch_id: str, table_id: int, match: dict,
-                              actions: list, priority: int) -> int:
+def modify_all_matching_rules(switch_id: str, table_id: Optional[int] = None, match: Optional[dict] = None,
+                              actions: Optional[list] = None, priority: Optional[int] = None) -> int:
     """
     Function to modify all matching rules based on the inputted arguments on a switch.
     Args:
@@ -192,9 +192,12 @@ def modify_all_matching_rules(switch_id: str, table_id: int, match: dict,
         "actions": actions
     }
 
+    data = {k: v for k, v in data.items() if v is not None}  # clean
+
     resp = requests.post('http://localhost:8080/stats/flowentry/modify_strict', headers=headers, json=data)
 
     return resp.status_code
+
 
 @tool
 def add_group_entry(switch_id: int, bucket_type: str, group_id: int,
@@ -257,7 +260,59 @@ def add_group_entry(switch_id: int, bucket_type: str, group_id: int,
     return resp.status_code
 
 
+@tool
+def modify_group_entry(switch_id: int, group_id: int, bucket_type: Optional[str] = None,
+                       buckets: Optional[list[dict]] = None) -> int:
+    """
+    Function to modify an existing group entry on a switch.
+    Args:
+        switch_id: ID of the switch (in decimal) where the group resides
+        bucket_type: Optional -> change the type of buckets for the group
+        group_id: ID of the group
+        buckets: Optional -> New bucket values for the group
+    """
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    data = {
+        "dpid": switch_id,
+        "type": bucket_type,
+        "group_id": group_id,
+        "buckets": buckets
+    }
+
+    data = {k: v for k, v in data.items() if v is not None}  # clean
+
+    resp = requests.post("http://localhost:8080/stats/groupentry/add", headers=headers, json=data)
+
+    return resp.status_code
+
+
+@tool
+def delete_group_entry(switch_id: int, group_id: int) -> int:
+    """
+    Function to delete a group entry on a switch.
+    Args:
+        switch_id: ID of the switch (in decimal),
+        group_id: ID for the group to be deleted
+    """
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    data = {
+        "dpid": switch_id,
+        "group_id": group_id,
+    }
+
+    resp = requests.post("http://localhost:8080/stats/groupentry/delete", headers=headers, json=data)
+
+    return resp.status_code
+
+
 def create_tool_list(extra_funcs=None) -> list:
     return [add_rule, delete_rule_strict,
             modify_rule_strict, modify_all_matching_rules,
-            check_switch, get_path_between_nodes, add_group_entry]
+            check_switch, get_path_between_nodes,
+            add_group_entry, modify_group_entry, delete_group_entry]
