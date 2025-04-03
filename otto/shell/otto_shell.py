@@ -147,7 +147,7 @@ class OttoShell(cmd.Cmd):
         host_mappings = {}
 
         for switch, data in network_state.items():
-            for switch_port, remote_host in switch.get('connectedHosts', {}).items():
+            for switch_port, remote_host in network_state[switch].get('connectedHosts', {}).items():
                 host_id = remote_host['id']
                 host_mappings[switch] = {}
                 host_mappings[switch][switch_port] = host_id
@@ -235,7 +235,6 @@ class OttoShell(cmd.Cmd):
         sys.exit(0)
 
     def run(self):
-        check_api_keys()
         shell_exit = False
         while not shell_exit:
             try:
@@ -253,4 +252,4 @@ class OttoShell(cmd.Cmd):
         pass
 
     def _close_network_app_db_connection(self) -> None:
-        self._database_connection.close()
+        self._auth_database_connection.close()

@@ -11,7 +11,7 @@ from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.ryu.intent_engine.intent_processor_agent_tools import \
     create_tool_list
 from otto.shell.otto_shell import OttoShell
-
+from otto.utils import check_default_credentials, check_api_keys
 
 def main():
     main_arg_parser = argparse.ArgumentParser(prog="Otto",
@@ -97,4 +97,6 @@ def main():
 
 
 if __name__ == "__main__":
+    check_default_credentials()
+    check_api_keys()
     main()

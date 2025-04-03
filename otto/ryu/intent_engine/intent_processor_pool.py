@@ -45,8 +45,6 @@ class IntentProcessorPool:
         if self.pool and any(p.model_name == model_required for p in self.pool):
             designated_processor = next(p for p in self.pool if p.model_name == model_required)
 
-            print(f"found p {designated_processor}")
-
             return designated_processor
         else:
             print(f"No IntentProcessor instance found which utilises model {model_required}. Creating new instance")
