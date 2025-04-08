@@ -239,6 +239,10 @@ def add_group_entry(switch_id: int, bucket_type: str, group_id: int,
                 ]
             }, ....
         ]
+       An action list for a bucket which outputs and modifies the Layer 2 and Layer 3 addresses will look like the following:
+       [{'type': 'SET_FIELD', 'field': 'ipv4_dst', 'value': '10.1.1.2'},
+       {'type': 'SET_FIELD', 'field': 'eth_dst', 'value': '00:00:aa:bb:cc:02'}, 
+       {'type': 'OUTPUT', 'port': 1}]}
     """
 
     # definitions for the OpenFlow groups taken from:

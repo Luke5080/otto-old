@@ -14,7 +14,7 @@ class GunicornManager(BaseApplication):
         self.options = {
             "bind": f"{self.host}:{self.port}",
             "workers": multiprocessing.cpu_count() * 2,  # maybe an overshoot
-            "timeout": 180,
+            "timeout": 3000,
             "loglevel": "critical",
             # supress all messages except critical to avoid messages being displaying when running with OttoShell
             "on_starting": self._log_master_pid,

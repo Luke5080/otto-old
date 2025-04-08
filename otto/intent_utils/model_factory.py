@@ -23,7 +23,7 @@ class ModelFactory:
                 return ChatDeepSeek(model_name="deepseek-chat", temperature=0)
 
             case "claude-3-5-sonnet":
-                return ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                return ChatAnthropic(model="claude-3-7-sonnet-20250219", temperature=0)
 
             case "gemini":
                 return ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
