@@ -136,8 +136,10 @@ class OttoApi:
             intent = intent_request['intent']
 
             messages = [HumanMessage(content=intent)]
+            from langchain_core.runnables.config import RunnableConfig
+            config = RunnableConfig(recursion_limit=300)
 
-            result = designated_processor.graph.invoke({"messages": messages})
+            result = designated_processor.graph.invoke({"messages": messages}, config)
             resp = ""
             for m in result['messages']:
                 if isinstance(m, AIMessage):

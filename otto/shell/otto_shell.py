@@ -190,7 +190,10 @@ class OttoShell(cmd.Cmd):
         print(f"Agent verbosity set to {self._verbosity_level}")
 
     def verbose_output(self, intent):
-        for output in self._agent.graph.stream({"messages": intent}):
+        from langchain_core.runnables.config import RunnableConfig
+        config = RunnableConfig(recursion_limit=100)
+
+        for output in self._agent.graph.stream({"messages": intent}, config):
             if 'save_intent' in output:
                 continue
             for key, value in output.items():

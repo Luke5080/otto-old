@@ -64,7 +64,7 @@ Flow Rule Guidelines: Bidirectional Flows Are Mandatory
 - Protocol-based flows (e.g., HTTP, SSH, FTP):  
   - Forward path: Match tp_dst (destination port).  
   - Reverse path: Match tp_src (source port) (MUST be explicitly configured).  
-
+  ** For flows which are concerned with UDP, use udp_src and udp_dst for matching on source/destination ports **
 Deleting Flows  
 - Never delete flows unless absolutely necessary.  
 - If removing a connection, do NOT simply delete the flow—replace it with a drop rule matching the intent criteria.  
