@@ -26,6 +26,9 @@ if st.session_state.user_token is not None:
     st_api_handler = ApiHandler()
     st_api_handler.set_token(st.session_state.user_token)
 
+    chosen_model = st.selectbox("IntentProcessor Model",
+                                ["gpt-4o", "gpt-4o-mini", "gpt-o3-mini", "deepseek-chat", "claude-3-5-sonnet"])
+
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message['content'])
@@ -36,7 +39,7 @@ if st.session_state.user_token is not None:
 
         with st.chat_message("assistant"):
             with st.spinner("Contacting IntentProcessor.."):
-                intent_processor_response = st_api_handler.declare_intent(intent)
+                intent_processor_response = st_api_handler.declare_intent(intent, chosen_model)
 
             output_response = st.write_stream(generate_output(intent_processor_response.get("message", "")))
 

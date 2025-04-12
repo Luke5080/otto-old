@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Union, Optional
 
 import networkx as nx
+from langchain_anthropic import ChatAnthropic
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import SystemMessage, AIMessage
+from langchain_core.messages import SystemMessage, AIMessage, merge_message_runs
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
@@ -27,7 +28,8 @@ class IntentProcessor:
         self.tools = {tool.name: tool for tool in tools}
 
         self.model = model.bind_tools(tools, tool_choice="auto")
-        self.model_name = model.model_name
+        self.model_name = model.model_name if not isinstance(model,
+                                                             ChatAnthropic) else model.model  # silly ChatAnthropic shenanigans
 
         self.model_factory = ModelFactory()
 
@@ -92,9 +94,6 @@ class IntentProcessor:
                 switch_port_mappings[(switch, host_id)] = (switch_port, host_id)
                 switch_port_mappings[(host_id, switch)] = (host_id, switch_port)
         return {
-            'messages': [
-                SystemMessage(content=f"Current Network State:\n{network_state}")
-            ],
             'network_state': network_state,
             'network_graph': network_graph,
             'switch_port_mappings': switch_port_mappings
@@ -105,7 +104,11 @@ class IntentProcessor:
 
         messages = state['messages']
 
-        messages = [SystemMessage(content=self.system)] + messages
+        # need to reformat this way so that ChatAnthropic doesn't complain..
+        messages = [SystemMessage(content=self.system)] + [
+            SystemMessage(content=f"Current Network State:\n{state['network_state']}")] + messages
+
+        messages = merge_message_runs(messages)
 
         response = self.model.invoke(messages)
 

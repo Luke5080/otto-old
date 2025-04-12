@@ -1,5 +1,6 @@
 import hashlib
 import json
+
 import requests
 from requests.exceptions import ConnectionError, HTTPError
 
@@ -18,7 +19,8 @@ class NetworkStateFinder:
             "ports": self.get_ports(switch_hex_dpid),
             "portMappings": self.get_port_mappings(switch_hex_dpid),
             "connectedHosts": self.get_connected_hosts(switch_hex_dpid),
-            "installedFlows": self.get_installed_flows(switch_id)
+            "installedFlows": self.get_installed_flows(switch_id),
+            "installedGroups": self.get_installed_groups(switch_id)
         }
 
         return switch_struct
@@ -176,6 +178,28 @@ class NetworkStateFinder:
                 host_count += 1
 
         return host_mappings
+
+    @staticmethod
+    def get_installed_groups(switch_id: str):
+         try:
+            installed_groups = requests.get(f"http://127.0.0.1:8080/stats/groupdesc/{switch_id}")
+            installed_groups.raise_for_status()
+         except HTTPError as e:
+            raise HostRetrievalException(
+                f"""
+                Error while contacting API /stats/groupdesc
+                Please ensure you run Ryu with the following applications:\n
+                ryu-manager ryu.app.ofctl_rest ryu.app.rest_topology --observe-links
+                Exception raised: {e}
+                """
+            )
+
+         except Exception as e:
+            raise HostRetrievalException(e)
+
+         installed_groups = installed_groups.json()
+
+         return installed_groups[switch_id]
 
     @staticmethod
     def get_installed_flows(switch_dpid: str) -> dict:

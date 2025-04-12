@@ -125,7 +125,7 @@ class ApiHandler:
 
         return model_usage_response.json().get('message', "")
 
-    def declare_intent(self, intent: str) -> dict:
+    def declare_intent(self, intent: str, model: str) -> dict:
         """
         Method to send intent to be processed and fulfilled by sending a POST request
         to /declare-intent endpoint. Returns response in JSON format
@@ -133,8 +133,8 @@ class ApiHandler:
         Args:
             intent: str - Intent in string format to be sent to /declare-intent API.
         """
-        data = {'method': 'user', 'token': self._authentication_token, 'intent': intent,
-                'stream_type': 'AgentMessages'}
+        data = {'method': 'admin', 'token': self._authentication_token, 'intent': intent,
+                'stream_type': 'AgentMessages', 'model': model}
 
         try:
             response = requests.post(f"{self._api_url}/declare-intent", headers=self._request_headers, json=data)

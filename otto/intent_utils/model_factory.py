@@ -1,3 +1,4 @@
+from langchain_anthropic import ChatAnthropic
 from langchain_deepseek import ChatDeepSeek
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
@@ -18,7 +19,11 @@ class ModelFactory:
             case "llama":
                 return ChatGroq(model="qwen-2.5-32b", temperature=0)
 
-            case "deepseek":
-                return ChatDeepSeek(model="deepseek-chat", temperature=0)
+            case "deepseek-chat":
+                return ChatDeepSeek(model_name="deepseek-chat", temperature=0)
+
+            case "claude-3-5-sonnet":
+                return ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+
             case "gemini":
                 return ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)

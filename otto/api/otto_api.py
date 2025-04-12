@@ -45,7 +45,7 @@ class OttoApi:
                 try:
                     token = token.split(" ")[1]
                     token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
-                    print(token_data)
+
                 except Exception as e:
                     print(e)
                     return jsonify({'message': 'Invalid token'}), 403
@@ -125,8 +125,8 @@ class OttoApi:
             intent_request = request.get_json()
             if not intent_request or 'intent' not in intent_request:
                 return jsonify({'message': 'No intent found'}), 403
-
-            if 'model' not in intent_request:
+            print(intent_request['model'])
+            if 'model' not in intent_request or intent_request['model'] is None:
                 designated_processor = self.intent_processor_pool.get_intent_processor('gpt-4o')
             else:
                 designated_processor = self.intent_processor_pool.get_intent_processor(intent_request['model'])
@@ -136,12 +136,17 @@ class OttoApi:
             intent = intent_request['intent']
 
             messages = [HumanMessage(content=intent)]
+            from langchain_core.runnables.config import RunnableConfig
+            config = RunnableConfig(recursion_limit=300)
 
-            result = designated_processor.graph.invoke({"messages": messages})
+            result = designated_processor.graph.invoke({"messages": messages}, config)
             resp = ""
             for m in result['messages']:
                 if isinstance(m, AIMessage):
-                    resp += m.content + " "
+                   if isinstance(m.content, str):
+                      resp += m.content + " "
+                   else:
+                      resp += m.content[0].get("text", "") + " "
 
             self.intent_processor_pool.return_intent_processor(designated_processor)
 
