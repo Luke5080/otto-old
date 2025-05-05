@@ -235,6 +235,7 @@ class NetworkStateFinder:
                     'dpid': switch_dpid
                 }
 
+
                 hash_str = json.dumps(target_hash_fields, sort_keys=True)
 
                 flow_hash = str(hashlib.md5(hash_str.encode('utf-8')).hexdigest())

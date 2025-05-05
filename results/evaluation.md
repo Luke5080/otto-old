@@ -31,9 +31,9 @@ Topology:
 5. Host-5-1 is hosting a web server which will receive many requests from host-2-1 and host-3-1 and no downtime can be afforded. Configure the network accordingly. Hosts 1-1 and 4-1 should not be able to access this web server.  
 
 #### Scores:  
-1. **gpt-4o**: 84  
-2. **deepseek-chat**: 89.96
-3. **claude-3-5-sonnet**: 60.86
+1. **deepseek-chat**: 89.9
+1. **gpt-4o**: 84
+3. **claude-3-5-sonnet**: 60.9
 
 ### Test 2:  
 Topology:  
@@ -48,8 +48,8 @@ Topology:
 
 #### Scores:  
 1. **gpt-4o**: 90.9  
-2. **deepseek-chat**: 80.85
-3. **claude-3-5-sonnet**: 87.80
+2. **claude-3-5-sonnet**: 87.8
+3. **deepseek-chat**: 80.9
 
 ### Test 3:  
 Topology:  
@@ -62,10 +62,10 @@ Topology:
 4. Host-1-1 should not be able to ping Host-5-1.  
 5. Host-5-1 is hosting a web server which will receive many requests from host-1-1 and host-6-1 and no downtime can be afforded. Configure the network accordingly. Host 2-1 should not be able to access this web server.  
 6. 
-#### Scores:  
-1. **gpt-4o**: 68.81  
+#### Scores: 
+1. **claude-3-5-sonnet**: 85.85
 2. **deepseek-chat**: 83.25
-3. **claude-3-5-sonnet**: 85.85
+3. **gpt-4o**: 68.81
 
 ### Overall Evaluation Averages:  
 _All scores from each test was rounded to the nearest decimal_  
