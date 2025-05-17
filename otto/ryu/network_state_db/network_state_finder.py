@@ -4,9 +4,9 @@ import json
 import requests
 from requests.exceptions import ConnectionError, HTTPError
 
-from exceptions import (FlowRetrievalException, HostRetrievalException,
-                        PortMappingException, PortRetrievalException,
-                        SwitchRetrievalException)
+from otto.exceptions import (FlowRetrievalException, HostRetrievalException,
+                             PortMappingException, PortRetrievalException,
+                             SwitchRetrievalException)
 
 
 class NetworkStateFinder:

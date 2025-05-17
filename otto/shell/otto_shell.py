@@ -151,7 +151,6 @@ class OttoShell(cmd.Cmd):
                 if switch not in host_mappings:
                     host_mappings[switch] = {}
                 host_mappings[switch][switch_port] = host_id
-        print(host_mappings)
 
         host_table = PrettyTable()
         host_table.field_names = ["Switch", "Host", "Port"]

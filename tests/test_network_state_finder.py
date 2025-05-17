@@ -5,9 +5,9 @@ import unittest
 import responses
 from requests.exceptions import ConnectionError
 
-from exceptions import (FlowRetrievalException, HostRetrievalException,
-                        PortMappingException, PortRetrievalException,
-                        SwitchRetrievalException)
+from otto.exceptions import (FlowRetrievalException, HostRetrievalException,
+                             PortMappingException, PortRetrievalException,
+                             SwitchRetrievalException)
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 

@@ -8,7 +8,7 @@ from prettytable import PrettyTable
 from requests import HTTPError
 from yaspin import yaspin
 
-from exceptions import AuthenticationError, ApiRequestError
+from otto.exceptions import AuthenticationError, ApiRequestError
 
 
 class SimpleFirewall:

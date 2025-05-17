@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 from requests import HTTPError
 
-from exceptions import AuthenticationError, ApiRequestError
+from otto.exceptions import AuthenticationError, ApiRequestError
 
 
 class ApiHandler:

@@ -4,7 +4,7 @@ from typing import Union
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-from exceptions import ProcessedIntentsDbException
+from otto.exceptions import ProcessedIntentsDbException
 
 
 class ProcessedIntentsDbOperator:
