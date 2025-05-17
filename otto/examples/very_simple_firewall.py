@@ -8,8 +8,6 @@ from prettytable import PrettyTable
 from requests import HTTPError
 from yaspin import yaspin
 
-from otto.exceptions import AuthenticationError, ApiRequestError
-
 
 class SimpleFirewall:
     def __init__(self):
@@ -25,14 +23,14 @@ class SimpleFirewall:
         self.firewall_rules = PrettyTable()
         self.firewall_rules.field_names = ["ID", "Source", "Destination", "Protocol", "Action"]
 
-        self._rules_file = Path("firewall_rules.toml")
+        self._rules_file = Path("/tmp/firewall_rules.toml")
 
     def _authenticate(self) -> None:
         try:
             authentication_response = requests.post(f"{self._api_url}/login", headers=self._login_headers,
                                                     json=self._login_body)
         except HTTPError as e:
-            raise AuthenticationError(
+            raise Exception(
                 f"Error while authenticating application. Please ensure Otto is running with API endpoints enabled. Error: {e}")
 
         if authentication_response.json().get('token', ''):
@@ -40,7 +38,7 @@ class SimpleFirewall:
             self._request_headers['Authorization'] = f"Bearer {self._authentication_token}"
 
         else:
-            raise AuthenticationError(
+            raise Exception(
                 f"Could not retrieve Authentication Token from response: {authentication_response.json()}")
 
     def _add_rule(self):
@@ -80,13 +78,13 @@ class SimpleFirewall:
             response.raise_for_status()
 
         except HTTPError as e:
-            raise ApiRequestError(f"""
+            raise Exception(f"""
                 Error declaring into to {self._api_url}/declare-intent
                 Ensure that otto is running with the Gunicorn server running\nError: {e}
                 """)
 
         except Exception as e:
-            raise ApiRequestError(f"""
+            raise Exception(f"""
                             Error declaring into to {self._api_url}/declare-intent
                             Ensure that otto is running with the Gunicorn server running\nError: {e}
                             """)
