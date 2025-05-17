@@ -228,6 +228,8 @@ class OttoShell(cmd.Cmd):
                 f"INSERT INTO network_applications(username, password) VALUES(%s, %s)", (args.name, args.password)
             )
 
+            self._auth_database_connection.commit()
+
             cursor.fetchall()
 
         except SystemExit:

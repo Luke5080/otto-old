@@ -54,7 +54,7 @@ class ApiHandler:
         Method to retrieve the latest activity data from the /latest-activity API. Returns the last 5 documents
         found in the intent_history collection in the processed_intents_db database.
         """
-        print(self._request_headers)
+
         try:
             latest_activity_response = requests.get(f"{self._api_url}/latest-activity", headers=self._request_headers)
             latest_activity_response.raise_for_status()
