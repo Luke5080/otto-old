@@ -12,7 +12,7 @@ from yaspin import yaspin
 class SimpleFirewall:
     def __init__(self):
         self._authentication_token = None
-        self._username = "firewall"
+        self._username = "firewall101"
         self._password = "firewall.123"
         self._login_body = {"method": "application", "username": self._username, "password": self._password}
 
@@ -90,7 +90,7 @@ class SimpleFirewall:
                             """)
 
         if response.status_code == 200:
-            with open("firewall_rules.toml", "r") as f:
+            with open("/tmp/firewall_rules.toml", "r") as f:
                 rules = toml.load(f)
 
             rule_id = len(rules) + 1
@@ -103,7 +103,7 @@ class SimpleFirewall:
             }
             rules[str(rule_id)] = new_rule
 
-            with open("firewall_rules.toml", "w") as f:
+            with open("/tmp/firewall_rules.toml", "w") as f:
                 toml.dump(rules, f)
 
             self.firewall_rules.add_row([rule_id, src, dst, protocol, action])
@@ -115,7 +115,7 @@ class SimpleFirewall:
         rules = {}
 
         if self._rules_file.exists():
-            with open("firewall_rules.toml", "r") as f:
+            with open("/tmp/firewall_rules.toml", "r") as f:
                 rules = toml.load(f)
         else:
             self._rules_file.touch()
