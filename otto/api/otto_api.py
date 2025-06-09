@@ -5,6 +5,7 @@ from functools import wraps
 import jwt
 from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.runnables.config import RunnableConfig
 
 from otto.api.authentication_db_conn_pool import AuthenticationDbConnPool
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
@@ -136,7 +137,7 @@ class OttoApi:
             intent = intent_request['intent']
 
             messages = [HumanMessage(content=intent)]
-            from langchain_core.runnables.config import RunnableConfig
+
             config = RunnableConfig(recursion_limit=300)
 
             result = designated_processor.graph.invoke({"messages": messages}, config)
