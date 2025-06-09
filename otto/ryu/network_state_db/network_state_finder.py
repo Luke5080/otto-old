@@ -4,9 +4,9 @@ import json
 import requests
 from requests.exceptions import ConnectionError, HTTPError
 
-from exceptions import (FlowRetrievalException, HostRetrievalException,
-                        PortMappingException, PortRetrievalException,
-                        SwitchRetrievalException)
+from otto.exceptions import (FlowRetrievalException, HostRetrievalException,
+                             PortMappingException, PortRetrievalException,
+                             SwitchRetrievalException)
 
 
 class NetworkStateFinder:
@@ -234,6 +234,7 @@ class NetworkStateFinder:
                     'actions': flow['actions'],
                     'dpid': switch_dpid
                 }
+
 
                 hash_str = json.dumps(target_hash_fields, sort_keys=True)
 

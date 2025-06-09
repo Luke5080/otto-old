@@ -6,7 +6,7 @@ import subprocess
 from otto.otto_logger.logger_config import logger
 
 
-class StreamlitRunner():
+class StreamlitRunner:
     def __init__(self):
         self._start_command = ["python3","-m", "streamlit", "run", "otto/gui/Dashboard.py"]
         self.process = None

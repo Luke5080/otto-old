@@ -4,8 +4,8 @@ from bson import ObjectId
 from pymongo import MongoClient, InsertOne
 from pymongo.errors import PyMongoError
 
-from exceptions import (NetworkDatabaseException,
-                        SwitchDocumentNotFound)
+from otto.exceptions import (NetworkDatabaseException,
+                             SwitchDocumentNotFound)
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 

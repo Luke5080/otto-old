@@ -126,7 +126,7 @@ class OttoApi:
             intent_request = request.get_json()
             if not intent_request or 'intent' not in intent_request:
                 return jsonify({'message': 'No intent found'}), 403
-            print(intent_request['model'])
+
             if 'model' not in intent_request or intent_request['model'] is None:
                 designated_processor = self.intent_processor_pool.get_intent_processor('gpt-4o')
             else:
