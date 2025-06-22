@@ -1,28 +1,35 @@
-import datetime
 import os
 from functools import wraps
 
 import jwt
 from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables.config import RunnableConfig
 
 from otto.api.authentication_db_conn_pool import AuthenticationDbConnPool
+from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
+authentication_db = SQLAlchemy()
 
 class OttoApi:
     _app: Flask
-    intent_processor_pool: IntentProcessorPool
-    _authentication_db_pool = AuthenticationDbConnPool
+    _intent_processor_pool: IntentProcessorPool
+    _authentication_db_pool: AuthenticationDbConnPool
 
     def __init__(self, models: list[str] = None, pool_size: int = None):
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = os.urandom(16)
-        self._processed_intents_db_conn = ProcessedIntentsDbOperator()  # creates instance of object, but does not connect to database
+        self.app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:root@127.0.0.1:3306/authentication_db"
+        self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-        self.intent_processor_pool = IntentProcessorPool()
+        authentication_db.init_app(self.app)
+
+        self._processed_intents_db_conn = ProcessedIntentsDbOperator()
+
+        self._intent_processor_pool = IntentProcessorPool()
 
         self._authentication_db_pool = AuthenticationDbConnPool()
 
@@ -48,8 +55,9 @@ class OttoApi:
                     token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
                 except Exception as e:
-                    print(e)
+                    logger.warn(e)
                     return jsonify({'message': 'Invalid token'}), 403
+
                 return func(*args, **kwargs)
 
             return wrapped
@@ -61,27 +69,39 @@ class OttoApi:
             The /login route is used by the streamlit dashboard to authenticate a user, as well as being used to
             authenticate network applications which consume the different REST API endpoints. Returns a JWT token
             to be used in subsequent API calls.
+
+            Fields to be added in POST request body:
+                method: Context for the login API call. Should be either application or username. This is needed to know
+                which table to query against.
+                username: Username for the user or the registered application name
+                password: Password for the associated user/application.
+
             """
+
             login_request = request.get_json()
 
             if not login_request:
                 return jsonify(
                     {
-                        'message': 'Empty request body. Please provide the following fields: method, username, password'}), 403
+                        'message': 'Empty request body. Please provide the following fields: method (either application or user), username, password'
+                    }), 403
 
             if 'method' not in login_request or login_request['method'] not in ['application', 'user']:
                 return jsonify(
                     {'message': 'Method must be set to either application or user'}), 403
 
-            table = "network_applications" if login_request['method'] == "application" else "users"
-
             if 'username' not in login_request or 'password' not in login_request:
                 return jsonify(
                     {'message': 'Username AND Password are required for network application authentication'}), 403
 
+            table = "network_applications" if login_request['method'] == "application" else "users"
+
+            """
             conn = self._authentication_db_pool.pool.get_connection()
             cursor = None
+
             try:
+
                 cursor = conn.cursor(buffered=True)
 
                 cursor.execute(
@@ -90,13 +110,11 @@ class OttoApi:
 
                 result = cursor.fetchone()
 
-                if result[0] == 0:
-                    return jsonify({'message': f"{login_request['method']} {login_request['username']} not found"}), 403
-
-                cursor.execute(
-                    f"SELECT * FROM {table} where username = %s AND password = %s",
-                    (login_request['username'], login_request['password'])
-                )
+                if result[0] == 1:
+                    cursor.execute(
+                        f"SELECT * FROM {table} where username = %s AND password = %s",
+                        (login_request['username'], login_request['password'])
+                    )
 
             finally:
                 if cursor is not None:
@@ -114,7 +132,9 @@ class OttoApi:
 
             else:
                 return jsonify(
-                    {'message': f"Incorrect password for {login_request['method']} {login_request['username']}"}), 403
+                    {
+                        'message': f"Incorrect username/password for {login_request['method']} {login_request['username']}"}), 403
+        """
 
         @self.app.route("/declare-intent", methods=['POST'])
         @validate_token
@@ -144,10 +164,10 @@ class OttoApi:
             resp = ""
             for m in result['messages']:
                 if isinstance(m, AIMessage):
-                   if isinstance(m.content, str):
-                      resp += m.content + " "
-                   else:
-                      resp += m.content[0].get("text", "") + " "
+                    if isinstance(m.content, str):
+                        resp += m.content + " "
+                    else:
+                        resp += m.content[0].get("text", "") + " "
 
             self.intent_processor_pool.return_intent_processor(designated_processor)
 

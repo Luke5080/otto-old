@@ -2,6 +2,11 @@ import mysql.connector
 
 
 class AuthenticationDbConnPool:
+    """
+    Class to be used as a connection pool to the authentication database
+    when requests are made to the /login API endpoint.
+    """
+
     def __init__(self):
         self._db_config = {
             'user': 'root', 'password': 'root',

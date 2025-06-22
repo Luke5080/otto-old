@@ -18,7 +18,7 @@ services:
     restart: always
 
   otto_authentication_db:
-    build: .
+    image: mysql:latest
     container_name: otto_authentication_db
     environment:
       - MYSQL_ROOT_PASSWORD=root

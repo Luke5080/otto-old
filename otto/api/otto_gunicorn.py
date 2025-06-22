@@ -3,7 +3,7 @@ import multiprocessing
 from gunicorn.app.base import BaseApplication
 
 from otto.otto_logger.logger_config import logger
-
+from otto.api.otto_api import authentication_db
 
 class GunicornManager(BaseApplication):
 
@@ -13,7 +13,7 @@ class GunicornManager(BaseApplication):
         self.port = 5000
         self.options = {
             "bind": f"{self.host}:{self.port}",
-            "workers": multiprocessing.cpu_count() * 2,  # maybe an overshoot
+            "workers": multiprocessing.cpu_count() * 2,
             "timeout": 3000,
             "loglevel": "critical",
             # supress all messages except critical to avoid messages being displaying when running with OttoShell
@@ -24,12 +24,15 @@ class GunicornManager(BaseApplication):
         self.process = None
         super().__init__()
 
+    def load(self):
+        with self._app.app.context():
+            authentication_db.create_all()
+
+        return self._app
+
     def load_config(self):
         for key, value in self.options.items():
             self.cfg.set(key, value)
-
-    def load(self):
-        return self._app
 
     def start_in_background(self):
         """
