@@ -25,8 +25,11 @@ class GunicornManager(BaseApplication):
         super().__init__()
 
     def load(self):
-        with self._app.app.context():
-            authentication_db.create_all()
+        try:
+           with self._app.app_context():
+              authentication_db.create_all()
+        except Exception as e:
+           print(e)
 
         return self._app
 

@@ -22,7 +22,8 @@ from otto.gui.streamlit_runner import StreamlitRunner
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
 from otto.utils import create_shell_banner
-
+from otto.api.authentication_db import authentication_db
+from otto.api.models.network_applications import NetworkApplications
 
 class OttoShell(cmd.Cmd):
     _controller_name: str = None
@@ -220,16 +221,15 @@ class OttoShell(cmd.Cmd):
     def do_create_app(self, args):
         try:
             args = self._create_app_arg_parser.parse_args(args.split())
+            application = NetworkApplications.query.filter_by(username=args.name).first()
 
-            cursor = self._auth_database_connection.cursor()
-
-            cursor.execute(
-                f"INSERT INTO network_applications(username, password) VALUES(%s, %s)", (args.name, args.password)
-            )
-
-            self._auth_database_connection.commit()
-
-            cursor.fetchall()
+            if application:
+               print(f"Network application with name {args.name} already exists.")
+            else:
+               new_application = NetworkApplications(username=args.name)
+               new_application.set_password(args.password)
+               authentication_db.session.add(new_application)
+               authentication_db.session.commit()
 
         except SystemExit:
             pass

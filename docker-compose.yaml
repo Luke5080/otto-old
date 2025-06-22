@@ -26,8 +26,8 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - "authentication_db:/var/lib/mysql"
+      - "otto_authentication_db:/var/lib/mysql"
     restart: always
 
 volumes:
-  authentication_db:
+  otto_authentication_db:

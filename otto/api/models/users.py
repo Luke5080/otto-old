@@ -1,4 +1,4 @@
-from otto.api.otto_api import authentication_db
+from otto.api.authentication_db import authentication_db
 
 
 class Users(authentication_db.Model):

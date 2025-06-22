@@ -97,6 +97,5 @@ def main():
 
 
 if __name__ == "__main__":
-    check_default_credentials()
     check_api_keys()
     main()
