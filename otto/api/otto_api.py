@@ -31,7 +31,7 @@ class OttoApi:
 
         self.intent_processor_pool = IntentProcessorPool()
 
-        self._authentication_db_pool = AuthenticationDbConnPool()
+        #self._authentication_db_pool = AuthenticationDbConnPool()
 
         self._create_routes()
 

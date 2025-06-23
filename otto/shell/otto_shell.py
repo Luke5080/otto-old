@@ -20,7 +20,7 @@ from otto.api.otto_gunicorn import GunicornManager
 from otto.controller_environment import ControllerEnvironment
 from otto.gui.streamlit_runner import StreamlitRunner
 from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
-from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 from otto.utils import create_shell_banner
 from otto.api.authentication_db import authentication_db
 from otto.api.models.network_applications import NetworkApplications
@@ -39,7 +39,7 @@ class OttoShell(cmd.Cmd):
     _api_endpoint_arg_parser: argparse.ArgumentParser
     _database_connection: MySQLConnectionAbstract
     available_models: dict
-    _network_state_db: NetworkDbOperator
+    _network_state_broker: NetworkStateFinder
 
     _otto_api: Union[None, OttoApi]
     _gm: Union[None, GunicornManager]
@@ -81,10 +81,10 @@ class OttoShell(cmd.Cmd):
         self._api_endpoint_arg_parser.add_argument('--pool-size', required=False,
                                                    help="Size of the IntentProcessorPool to be used to serve API Requests. The pool will be created with the defined size / the amount of models specified")
 
-        self._auth_database_connection = mysql.connector.connect(
-            user='root', password='root', host='localhost', port=3306, database='authentication_db'
-        )
-        self._network_state_db = NetworkDbOperator()
+        #self._auth_database_connection = mysql.connector.connect(
+        #    user='root', password='root', host='localhost', port=3306, database='authentication_db'
+        #)
+        self._network_state_finder = NetworkStateFinder()
 
         self._otto_api = None
         self._gm = None
@@ -96,7 +96,7 @@ class OttoShell(cmd.Cmd):
                                          api_endpoints=self._api_endpoints, dashboard=self._dashboard,
                                          verbosity_level=self._verbosity_level)
 
-        atexit.register(self._close_network_app_db_connection)
+        #atexit.register(self._close_network_app_db_connection)
 
     def do_start_api(self, args):
         """ Start the REST API Endpoints """
@@ -141,13 +141,15 @@ class OttoShell(cmd.Cmd):
 
     def do_get_hosts(self, line):
         """ Get all the current found hosts in the network """
-        self._network_state_db.connect()
-        network_state = self._network_state_db.dump_network_db()
+
+        network_state = self._network_state_finder.get_network_state()
+
+        state_id = next(iter(network_state), None)
 
         host_mappings = {}
 
-        for switch, data in network_state.items():
-            for switch_port, remote_host in network_state[switch].get('connectedHosts', {}).items():
+        for switch, data in network_state[state_id].items():
+            for switch_port, remote_host in network_state[state_id][switch].get('connectedHosts', {}).items():
                 host_id = remote_host['id']
                 if switch not in host_mappings:
                     host_mappings[switch] = {}
@@ -159,6 +161,7 @@ class OttoShell(cmd.Cmd):
             for port, host in port_mapping.items():
                 host_table.add_row([switch, host, port])
 
+        print(f"Current Network State ID: {state_id}") 
         print(host_table)
 
     def do_set_model(self, model):
@@ -235,7 +238,7 @@ class OttoShell(cmd.Cmd):
             pass
 
     def do_exit(self, arg):
-        self._controller_object.stop_state_updater()
+        self._controller_object.stop_state_broker()
         sys.exit(0)
 
     def run(self):

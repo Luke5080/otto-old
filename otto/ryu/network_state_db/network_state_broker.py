@@ -25,8 +25,10 @@ class NetworkStateBroker(Thread):
         """
         found_network_state = self._nw_state_finder.get_network_state()
 
-        self.agent_run_network_state_given[agent_run_id] = found_network_state
+        self.agent_run_network_state_given[agent_run_id] = next(iter(found_network_state), None)
 
+        print(f"Providing network state to {agent_run_id}")
+        print(self.agent_run_network_state_given)
         return found_network_state
 
     def terminate_agent_run(self, agent_run_id: str) -> None:
@@ -34,7 +36,10 @@ class NetworkStateBroker(Thread):
         Removes the agent run ID from the agent_run_network_state_given dictionary once
         an agent has finished executing.
         """
+        print(self.agent_run_network_state_given)
+
         try:
+            print("Deleting...")
             del self.agent_run_network_state_given[agent_run_id]
 
         except KeyError as e:
@@ -42,7 +47,7 @@ class NetworkStateBroker(Thread):
 
         except Exception as e:
             raise Exception(f"An error occurred whilst attempting to unregister the agent run: {e}")
-
+        print(self.agent_run_network_state_given)
     def run(self):
         """
         Overwritten run method of the parent Thread class. While the event is not set,
@@ -51,6 +56,7 @@ class NetworkStateBroker(Thread):
 
         while not self.stop_event.is_set():
             for agent_run, given_network_state in self.agent_run_network_state_given.items():
+                print(f"Checking {agent_run} with state {given_network_state}")
                 current_network_state = self._nw_state_finder.get_network_state()
 
                 if current_network_state != given_network_state:

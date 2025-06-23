@@ -78,10 +78,12 @@ class IntentProcessor:
         network_state = self.network_state_broker.provide_network_state(agent_run_id)
 
         network_graph = nx.Graph()
+
         switch_port_mappings = {}
 
-        for switch, switch_data in network_state.items():
+        state_id = next(iter(network_state), None)
 
+        for switch, switch_data in network_state[state_id].items():
             for switch_port, remote_port in switch_data.get('portMappings', {}).items():
                 remote_switch = format(int(remote_port.split('-')[0][1]), '016x')
                 network_graph.add_edge(switch, remote_switch, port_info=(switch_port, remote_port))
@@ -124,7 +126,7 @@ class IntentProcessor:
         return "continue" if len(last_msg.tool_calls) > 0 else "done"
 
     def save_intent(self, state: AgentState):
-        """ Register processed intent into processed_intents_db"""
+        """ Register processed intent into processed_intents_db
         operations = []
         for message in state['messages']:
             if isinstance(message, AIMessage) and len(message.tool_calls) > 0:
@@ -141,6 +143,8 @@ class IntentProcessor:
         self.processed_intents_db_conn.register_model_usage(self.model_name)
 
         return {'save_intent': processed_intent, 'operations': operations}
+        """
+        self.network_state_broker.terminate_agent_run(state['agent_run_id'])
 
     def change_model(self, model):
         """Change the language model used by IntentProcessor"""
