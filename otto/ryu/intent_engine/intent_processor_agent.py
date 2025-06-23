@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Union, Optional
 
@@ -12,6 +13,8 @@ from langgraph.prebuilt import ToolNode
 from otto.intent_utils.agent_state import AgentState
 from otto.intent_utils.model_factory import ModelFactory
 from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+from otto.ryu.network_state_db.network_state_broker import NetworkStateBroker
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
 
@@ -34,7 +37,7 @@ class IntentProcessor:
         self.model_factory = ModelFactory()
 
         self.processed_intents_db_conn = ProcessedIntentsDbOperator()
-        self.network_db_operator = NetworkDbOperator()
+        self.network_state_broker = NetworkStateBroker()
 
         graph = StateGraph(AgentState)
 
@@ -56,8 +59,6 @@ class IntentProcessor:
 
         self.graph = graph.compile()
 
-        self.graph.get_graph().draw_png()
-
     def construct_network_state(self, state: AgentState):
         """
         Method to construct the network state to be used by a single agent during an intent fulfilment operation.
@@ -71,9 +72,10 @@ class IntentProcessor:
         and network_graph and switch_port_mappings is utilised in the get_path_between_nodes tool to find a path
         between two nodes in the network.
         """
-        self.network_db_operator.connect()
 
-        network_state = self.network_db_operator.dump_network_db()
+        agent_run_id = str(uuid.uuid4())
+
+        network_state = self.network_state_broker.provide_network_state(agent_run_id)
 
         network_graph = nx.Graph()
         switch_port_mappings = {}
@@ -94,6 +96,7 @@ class IntentProcessor:
                 switch_port_mappings[(switch, host_id)] = (switch_port, host_id)
                 switch_port_mappings[(host_id, switch)] = (host_id, switch_port)
         return {
+            'agent_run_id': agent_run_id,
             'network_state': network_state,
             'network_graph': network_graph,
             'switch_port_mappings': switch_port_mappings
@@ -134,6 +137,7 @@ class IntentProcessor:
                                                                       intent=state['messages'][0].content,
                                                                       operations=operations,
                                                                       timestamp=datetime.now())
+
         self.processed_intents_db_conn.register_model_usage(self.model_name)
 
         return {'save_intent': processed_intent, 'operations': operations}

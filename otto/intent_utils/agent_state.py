@@ -8,6 +8,8 @@ from langchain_core.messages import AnyMessage
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
 
+    agent_run_id: str
+
     network_state: dict
     switch_port_mappings: dict
     host_mappings: dict

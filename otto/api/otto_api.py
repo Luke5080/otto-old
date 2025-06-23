@@ -29,7 +29,7 @@ class OttoApi:
 
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()
 
-        self._intent_processor_pool = IntentProcessorPool()
+        self.intent_processor_pool = IntentProcessorPool()
 
         self._authentication_db_pool = AuthenticationDbConnPool()
 

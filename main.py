@@ -74,8 +74,7 @@ def main():
 
     controller_env = controller_fetcher.get_controller("ryu")
 
-    controller_env.create_network_state()
-    controller_env.start_state_updater()
+    controller_env.start_state_broker()
     model_fetcher = ModelFactory()
 
     llm = model_fetcher.get_model(args.shell_model)

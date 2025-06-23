@@ -11,6 +11,34 @@ from otto.exceptions import (FlowRetrievalException, HostRetrievalException,
 
 class NetworkStateFinder:
 
+    def get_network_state(self) -> dict:
+        """
+        Method to find the current network state. First obtains a list of current
+        switches found in the network and then uses the get_switch_details method
+        to create a dictionary for each switch. Each dictionary created for a switch
+        is aggregated into one dictionary to represent the current network state.
+        Creates a SHA256 Hash of the dictionary to uniquely identify the current
+        network state
+
+        Returns:
+            dict: dictionary representing the current network state
+        """
+        found_switches = self.get_switches()
+
+        network_elements, current_nw_state = {}, {}
+
+        for switch in found_switches:
+            switch_info = self.get_switch_details(str(switch))
+
+            network_elements[switch_info["name"]] = switch_info
+
+        current_network_state_id = hashlib.sha256(
+            json.dumps(network_elements, sort_keys=True).encode('utf-8')).hexdigest()
+
+        current_nw_state[current_network_state_id] = network_elements
+
+        return current_nw_state
+
     def get_switch_details(self, switch_id: str) -> dict:
         switch_hex_dpid = format(int(switch_id), '016x')  # need to write as 16 hex DPID for some RYU API calls
 
@@ -90,7 +118,7 @@ class NetworkStateFinder:
         except Exception as e:
             raise PortRetrievalException(e)
 
-        if len(switch_details.json()) > 0 and 'ports' in switch_details.json()[0]:
+        if len(switch_details.json()) and 'ports' in switch_details.json()[0]:
             retrieved_switch_ports = switch_details.json()[0]['ports']
 
             for port in retrieved_switch_ports:
@@ -128,7 +156,7 @@ class NetworkStateFinder:
 
         links_found = links_found.json()
 
-        if len(links_found) > 0:
+        if len(links_found):
             for port_mapping in links_found:
                 source_port = port_mapping['src']['name']
                 destination = port_mapping['dst']['name']
@@ -181,10 +209,10 @@ class NetworkStateFinder:
 
     @staticmethod
     def get_installed_groups(switch_id: str):
-         try:
+        try:
             installed_groups = requests.get(f"http://127.0.0.1:8080/stats/groupdesc/{switch_id}")
             installed_groups.raise_for_status()
-         except HTTPError as e:
+        except HTTPError as e:
             raise HostRetrievalException(
                 f"""
                 Error while contacting API /stats/groupdesc
@@ -194,12 +222,12 @@ class NetworkStateFinder:
                 """
             )
 
-         except Exception as e:
+        except Exception as e:
             raise HostRetrievalException(e)
 
-         installed_groups = installed_groups.json()
+        installed_groups = installed_groups.json()
 
-         return installed_groups[switch_id]
+        return installed_groups[switch_id]
 
     @staticmethod
     def get_installed_flows(switch_dpid: str) -> dict:
@@ -223,7 +251,7 @@ class NetworkStateFinder:
 
         formatted_flows = {}
 
-        if len(flows_found_dict) > 0:
+        if len(flows_found_dict):
             switch_key, = flows_found_dict
 
             for flow in flows_found_dict[switch_key]:
@@ -234,7 +262,6 @@ class NetworkStateFinder:
                     'actions': flow['actions'],
                     'dpid': switch_dpid
                 }
-
 
                 hash_str = json.dumps(target_hash_fields, sort_keys=True)
 

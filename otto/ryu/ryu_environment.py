@@ -2,32 +2,20 @@ import atexit
 
 from otto.controller_environment import ControllerEnvironment
 from otto.otto_logger.logger_config import logger
-from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
-from otto.ryu.network_state_db.network_state_updater import NetworkStateUpdater
+from otto.ryu.network_state_db.network_state_broker import NetworkStateBroker
 
 
 class RyuEnvironment(ControllerEnvironment):
-    network_state_updater = NetworkStateUpdater()
-    network_db_operator = NetworkDbOperator()
-    network_db_operator.connect()
+    network_state_broker = NetworkStateBroker()
 
     def __init__(self):
-        atexit.register(self.drop_database)
-        atexit.register(self.stop_state_updater)
+        atexit.register(self.stop_state_broker)
 
-    def create_network_state(self):
-        self.network_db_operator.create_network_state_db()
+    def start_state_broker(self):
+        self.network_state_broker.start()
 
-    def start_state_updater(self):
-        self.network_state_updater.start()
-
-    def stop_state_updater(self):
-        logger.debug("Stopping network state updater thread..")
-        self.network_state_updater.stop_event.set()
-        self.network_state_updater.join()
-        logger.debug("Network state updater thread stopped.")
-
-    def drop_database(self):
-        logger.debug("Dropping switches collection from otto_network_state_db..")
-        self.network_db_operator.drop_database()
-        logger.debug("Switches collection dropped.")
+    def stop_state_broker(self):
+        logger.debug("Stopping network state broker thread..")
+        self.network_state_broker.stop_event.set()
+        self.network_state_broker.join()
+        logger.debug("Network state broker thread stopped.")
