@@ -1,5 +1,6 @@
-from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 from threading import Thread, Event
+
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 
 class NetworkStateBroker(Thread):
@@ -24,11 +25,13 @@ class NetworkStateBroker(Thread):
             Dictionary containing the current network state.
         """
         found_network_state = self._nw_state_finder.get_network_state()
+        state_id = next(iter(found_network_state), None)
 
-        self.agent_run_network_state_given[agent_run_id] = next(iter(found_network_state), None)
+        if state_id is None:
+            raise Exception("State ID is None.")
 
-        print(f"Providing network state to {agent_run_id}")
-        print(self.agent_run_network_state_given)
+        self.agent_run_network_state_given[agent_run_id] = state_id
+
         return found_network_state
 
     def terminate_agent_run(self, agent_run_id: str) -> None:
@@ -36,7 +39,6 @@ class NetworkStateBroker(Thread):
         Removes the agent run ID from the agent_run_network_state_given dictionary once
         an agent has finished executing.
         """
-        print(self.agent_run_network_state_given)
 
         try:
             print("Deleting...")
@@ -47,7 +49,7 @@ class NetworkStateBroker(Thread):
 
         except Exception as e:
             raise Exception(f"An error occurred whilst attempting to unregister the agent run: {e}")
-        print(self.agent_run_network_state_given)
+
     def run(self):
         """
         Overwritten run method of the parent Thread class. While the event is not set,

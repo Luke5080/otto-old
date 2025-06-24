@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import streamlit as st
 
-from otto.ryu.network_state_db.network_db_operator import NetworkDbOperator
+from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 if st.session_state.user_token is None:
     st.info('Please Login from the Home page and try again.')
@@ -94,12 +94,14 @@ def create_network_graph(network_state: dict):
 
 
 if st.session_state.user_token is not None:
-    network_db_operator = NetworkDbOperator()
-    network_db_operator.connect()
+    network_state_finder = NetworkStateFinder()
 
-    network_state = network_db_operator.dump_network_db()
+    network_state = network_state_finder.get_network_state()
 
-    network_graph_complete = create_network_graph(network_state)
+    if state_id := next(iter(network_state), None) is not None:
+        network_graph_complete = create_network_graph(network_state[state_id])
+    else:
+        network_graph_complete = None
 
     st.header("Current Network State")
 

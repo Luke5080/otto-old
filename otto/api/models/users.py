@@ -1,3 +1,5 @@
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from otto.api.authentication_db import authentication_db
 
 
@@ -7,3 +9,9 @@ class Users(authentication_db.Model):
     id = authentication_db.Column(authentication_db.Integer, primary_key=True)
     username = authentication_db.Column(authentication_db.String(255), nullable=False, unique=True)
     password = authentication_db.Column(authentication_db.String(255), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)

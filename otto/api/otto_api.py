@@ -1,4 +1,5 @@
 import os
+import datetime
 from functools import wraps
 
 import jwt
@@ -7,17 +8,18 @@ from flask_sqlalchemy import SQLAlchemy
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables.config import RunnableConfig
 
-from otto.api.authentication_db_conn_pool import AuthenticationDbConnPool
+from otto.api.models.network_applications import NetworkApplications
+from otto.api.models.users import Users
 from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
 authentication_db = SQLAlchemy()
 
+
 class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
-    _authentication_db_pool: AuthenticationDbConnPool
 
     def __init__(self, models: list[str] = None, pool_size: int = None):
         self.app = Flask(__name__)
@@ -30,8 +32,6 @@ class OttoApi:
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()
 
         self.intent_processor_pool = IntentProcessorPool()
-
-        #self._authentication_db_pool = AuthenticationDbConnPool()
 
         self._create_routes()
 
@@ -94,35 +94,11 @@ class OttoApi:
                 return jsonify(
                     {'message': 'Username AND Password are required for network application authentication'}), 403
 
-            table = "network_applications" if login_request['method'] == "application" else "users"
+            sqlalchemy_model = NetworkApplications if login_request['method'] == "application" else Users
 
-            """
-            conn = self._authentication_db_pool.pool.get_connection()
-            cursor = None
+            found_user = sqlalchemy_model.query.filter_by(username=login_request['username']).first()
 
-            try:
-
-                cursor = conn.cursor(buffered=True)
-
-                cursor.execute(
-                    f"SELECT COUNT(*) FROM {table} WHERE username = %s", (login_request['username'],)
-                )
-
-                result = cursor.fetchone()
-
-                if result[0] == 1:
-                    cursor.execute(
-                        f"SELECT * FROM {table} where username = %s AND password = %s",
-                        (login_request['username'], login_request['password'])
-                    )
-
-            finally:
-                if cursor is not None:
-                    cursor.close()
-
-                conn.close()
-
-            if cursor.fetchone() is not None:
+            if found_user and found_user.check_password(login_request['password']):
                 token = jwt.encode({
                     'app': login_request['username'],
                     'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=3600)
@@ -134,7 +110,6 @@ class OttoApi:
                 return jsonify(
                     {
                         'message': f"Incorrect username/password for {login_request['method']} {login_request['username']}"}), 403
-        """
 
         @self.app.route("/declare-intent", methods=['POST'])
         @validate_token
@@ -144,6 +119,7 @@ class OttoApi:
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
 
             intent_request = request.get_json()
+
             if not intent_request or 'intent' not in intent_request:
                 return jsonify({'message': 'No intent found'}), 403
 
@@ -161,6 +137,7 @@ class OttoApi:
             config = RunnableConfig(recursion_limit=300)
 
             result = designated_processor.graph.invoke({"messages": messages}, config)
+
             resp = ""
             for m in result['messages']:
                 if isinstance(m, AIMessage):
