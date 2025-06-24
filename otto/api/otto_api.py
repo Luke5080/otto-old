@@ -13,8 +13,7 @@ from otto.api.models.users import Users
 from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
-
-authentication_db = SQLAlchemy()
+from otto.api.authentication_db import authentication_db
 
 
 class OttoApi:
@@ -26,6 +25,9 @@ class OttoApi:
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self.app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:root@127.0.0.1:3306/authentication_db"
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        self.app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
+        self.app.config['SQLALCHEMY_POOL_PRE_PING'] = True
+        self.app.config['SQLALCHEMY_POOL_TIMEOUT'] = 20
 
         authentication_db.init_app(self.app)
 

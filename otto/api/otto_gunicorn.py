@@ -3,7 +3,9 @@ import multiprocessing
 from gunicorn.app.base import BaseApplication
 
 from otto.otto_logger.logger_config import logger
-from otto.api.otto_api import authentication_db
+from otto.api.authentication_db import authentication_db
+from otto.api.models.users import Users
+from otto.api.models.network_applications import NetworkApplications
 
 class GunicornManager(BaseApplication):
 
@@ -17,21 +19,24 @@ class GunicornManager(BaseApplication):
             "timeout": 3000,
             "loglevel": "critical",
             # supress all messages except critical to avoid messages being displaying when running with OttoShell
-            "on_starting": self._log_master_pid,
+            "on_starting": self._before_fork,
             "post_fork": self._log_worker_pid
         }
 
         self.process = None
         super().__init__()
 
-    def load(self):
-        try:
-           with self._app.app_context():
-              authentication_db.create_all()
-        except Exception as e:
-           print(e)
+    def _before_fork(self, server):
+        with self._app.app_context():
+            try:
+                authentication_db.create_all()
+                logger.info("DB initialized in worker")
+            except Exception as e:
+                logger.warn(f"Worker DB init error: {e}")
 
-        return self._app
+    def load(self):
+         return self._app
+
 
     def load_config(self):
         for key, value in self.options.items():
