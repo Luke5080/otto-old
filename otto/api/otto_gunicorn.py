@@ -6,6 +6,9 @@ from otto.otto_logger.logger_config import logger
 from otto.api.authentication_db import authentication_db
 from otto.api.models.users import Users
 from otto.api.models.network_applications import NetworkApplications
+from otto.api.models.tool_calls import ToolCalls
+from otto.api.models.processed_intents import ProcessedIntents
+from otto.api.models.called_tools import CalledTools
 
 class GunicornManager(BaseApplication):
 

@@ -26,6 +26,7 @@ class OttoApi:
         db_host = os.getenv("OTTO_DB_HOST")
         db_port = os.getenv("OTTO_DB_PORT")
 
+        print(f"mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/authentication_db")
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self.app.config[

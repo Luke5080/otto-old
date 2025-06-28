@@ -7,6 +7,6 @@ class ProcessedIntents(authentication_db.Model):
     declared_by_type = authentication_db.Column(authentication_db.String(100), nullable=False)
     declared_by_id = authentication_db.Column(authentication_db.Integer, nullable=False)
     intent = authentication_db.Column(authentication_db.Text)
-    timestamp = authentication_db.Column(authentication_db.Datetime, nullable=False)
+    timestamp = authentication_db.Column(authentication_db.DateTime, nullable=False)
 
     outcomes = authentication_db.relationship('CalledTools', back_populates='intent', cascade='all, delete-orphan')
