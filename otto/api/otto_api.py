@@ -1,29 +1,35 @@
-import os
 import datetime
+import os
 from functools import wraps
 
 import jwt
 from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables.config import RunnableConfig
 
+from otto.api.authentication_db import authentication_db
 from otto.api.models.network_applications import NetworkApplications
 from otto.api.models.users import Users
 from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
-from otto.api.authentication_db import authentication_db
 
 
 class OttoApi:
     _app: Flask
     _intent_processor_pool: IntentProcessorPool
 
-    def __init__(self, models: list[str] = None, pool_size: int = None):
+    def __init__(self):
+
+        db_user = os.getenv("OTTO_DB_USER")
+        db_pwd = os.getenv("OTTO_DB_PWD")
+        db_host = os.getenv("OTTO_DB_HOST")
+        db_port = os.getenv("OTTO_DB_PORT")
+
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = os.urandom(16)
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:root@127.0.0.1:3306/authentication_db"
+        self.app.config[
+            'SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/authentication_db"
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         self.app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
         self.app.config['SQLALCHEMY_POOL_PRE_PING'] = True
@@ -116,6 +122,7 @@ class OttoApi:
         @self.app.route("/declare-intent", methods=['POST'])
         @validate_token
         def process_intent():
+
             token = request.headers['Authorization']
             token = token.split(" ")[1]
             token_data = jwt.decode(token, self.app.config['SECRET_KEY'], algorithms=['HS256'])
@@ -125,29 +132,25 @@ class OttoApi:
             if not intent_request or 'intent' not in intent_request:
                 return jsonify({'message': 'No intent found'}), 403
 
-            if 'model' not in intent_request or intent_request['model'] is None:
+            if 'model' not in intent_request or not intent_request['model']:
                 designated_processor = self.intent_processor_pool.get_intent_processor('gpt-4o')
             else:
                 designated_processor = self.intent_processor_pool.get_intent_processor(intent_request['model'])
 
-            designated_processor.context = token_data.get("app", {})
+            designated_processor.context, intent = token_data["app"], intent_request['intent']
 
-            intent = intent_request['intent']
-
-            messages = [HumanMessage(content=intent)]
-
-            config = RunnableConfig(recursion_limit=300)
+            messages, config = [HumanMessage(content=intent)], RunnableConfig(recursion_limit=300)
 
             result = designated_processor.graph.invoke({"messages": messages}, config)
 
             resp = ""
+
             for m in result['messages']:
                 if isinstance(m, AIMessage):
                     if isinstance(m.content, str):
                         resp += m.content + " "
                     else:
                         resp += m.content[0].get("text", "") + " "
-
             self.intent_processor_pool.return_intent_processor(designated_processor)
 
             if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':

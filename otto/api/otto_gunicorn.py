@@ -37,7 +37,6 @@ class GunicornManager(BaseApplication):
     def load(self):
          return self._app
 
-
     def load_config(self):
         for key, value in self.options.items():
             self.cfg.set(key, value)
