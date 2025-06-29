@@ -25,6 +25,7 @@ from otto.utils import create_shell_banner
 from otto.api.authentication_db import authentication_db
 from otto.api.models.network_applications import NetworkApplications
 
+
 class OttoShell(cmd.Cmd):
     _controller_name: str = None
     _controller_object: ControllerEnvironment

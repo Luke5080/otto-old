@@ -1,4 +1,6 @@
 from otto.api.authentication_db import authentication_db
+from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
+from otto.api.authentication_db import authentication_db
 
 class ToolCalls(authentication_db.Model):
     __tablename__ = "tool_calls"
@@ -8,3 +10,11 @@ class ToolCalls(authentication_db.Model):
 
     outcomes = authentication_db.relationship('CalledTools', back_populates='tool_call', cascade='all, delete-orphan')
 
+    def populate_tool_calls(self):
+        tools = [tool.name for tool in create_tool_list()]
+
+        for tool in tools:
+            tool_call =ToolCalls(name=tool)
+            authentication_db.session.add(tool_call)
+
+        authentication_db.session.commit()
