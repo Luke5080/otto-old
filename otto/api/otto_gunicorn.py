@@ -2,13 +2,9 @@ import multiprocessing
 
 from gunicorn.app.base import BaseApplication
 
-from otto.otto_logger.logger_config import logger
 from otto.api.authentication_db import authentication_db
-from otto.api.models.users import Users
-from otto.api.models.network_applications import NetworkApplications
-from otto.api.models.tool_calls import ToolCalls
-from otto.api.models.processed_intents import ProcessedIntents
-from otto.api.models.called_tools import CalledTools
+from otto.otto_logger.logger_config import logger
+
 
 class GunicornManager(BaseApplication):
 
@@ -21,24 +17,24 @@ class GunicornManager(BaseApplication):
             "workers": multiprocessing.cpu_count() * 2,
             "timeout": 3000,
             "loglevel": "critical",
-            # supress all messages except critical to avoid messages being displaying when running with OttoShell
             "on_starting": self._before_fork,
             "post_fork": self._log_worker_pid
         }
 
         self.process = None
+
         super().__init__()
 
     def _before_fork(self, server):
         with self._app.app_context():
             try:
                 authentication_db.create_all()
-                logger.info("DB initialized in worker")
+                logger.info("Otto Authentication Database Initialised")
             except Exception as e:
-                logger.warn(f"Worker DB init error: {e}")
+                logger.warn(f"Could not initialise Authentication Database: {e}")
 
     def load(self):
-         return self._app
+        return self._app
 
     def load_config(self):
         for key, value in self.options.items():
@@ -52,7 +48,7 @@ class GunicornManager(BaseApplication):
             self.process = multiprocessing.Process(target=self.run, daemon=True)
             self.process.start()
         else:
-            logger.debug("Gunicorn is already running.")
+            logger.warn("Gunicorn is already running.")
 
     def stop(self):
         """Stops Gunicorn if it's running."""
@@ -60,7 +56,7 @@ class GunicornManager(BaseApplication):
             self.process.terminate()
             self.process.join()
         else:
-            logger.debug("No active Gunicorn process.")
+            logger.warn("No active Gunicorn process.")
 
     def _log_master_pid(self, server):
         """
@@ -69,8 +65,8 @@ class GunicornManager(BaseApplication):
         For APIs:
         [Process 2 (child of process 1 and is a daemon)] GunicornManager run method
         [Process 3 (child of process 2)] Gunicorn Master
-        [Forked from process 2] Gunicorn Worker
-        [Forked from process 2] Gunicorn Worker
+        [Forked from process 3] Gunicorn Worker
+        [Forked from process 3] Gunicorn Worker
 
         For GUI:
         [Process 2 (child process of process 1)] Run streamlit through shell
@@ -80,10 +76,10 @@ class GunicornManager(BaseApplication):
         run streamlit.
         ....
         """
-        logger.info(f"Gunicorn Master started. PID {server.pid}")
+        logger.info(f"Gunicorn Master started with PID {server.pid}")
 
     def _log_worker_pid(self, server, worker):
         """
         Log the PID of a worker forked from Gunicorn Master process.
         """
-        logger.info(f"Gunicorn Worker started. PID {worker.pid}")
+        logger.info(f"Gunicorn Worker started with PID {worker.pid}")

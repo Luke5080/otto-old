@@ -1,56 +1,60 @@
 from datetime import datetime, timedelta
-from typing import Union
 
-from pymongo import MongoClient
-from pymongo.errors import PyMongoError
+from otto.api.authentication_db import authentication_db
+from otto.api.models.called_tools import CalledTools
+from otto.api.models.processed_intents import ProcessedIntents
+from otto.api.models.network_applications import NetworkApplications
+from otto.api.models.users import Users
 
 from otto.exceptions import ProcessedIntentsDbException
 
 
 class ProcessedIntentsDbOperator:
-    mongo_connector: Union[None, MongoClient]
 
-    def __init__(self):
-        self.mongo_connector = None
-        self.database = None
-
-    def connect(self):
-        """
-        Connect method to be used when wishing to connect to the intent_history database.
-        This is run after the object has been created, and created within the process which will
-        connect to the database to prevent any forking issues.
-        """
-        if self.mongo_connector is None:
-            self.mongo_connector = MongoClient('localhost', 27018)
-
-            self.database = self.mongo_connector['intent_history']
-
-    def save_intent(self, intent: str, context: str, operations: list[str], timestamp: datetime) -> dict:
+    @staticmethod
+    def save_intent(agent_run: str, context: str, username: str, intent: str, timestamp: datetime,
+                    called_tools: list[dict]) -> None:
         """
         Args:
+            agent_run: ID of the agent run
+            context: Either User/Application
+            username: Username of the user/app
             intent: The intent declared
-            context: User/Application name
-            operations: List of completed operations carried out by IntentProcessor
             timestamp: datetime object
+            called_tools: List of completed operations carried out by IntentProcessor
 
-        Method to save the processed intent to the processed_intents collection in intents_history database
         """
-        collection = self.database['processed_intents']
-        processed_intent = {
-            "declaredBy": context,
-            "intent": intent,
-            "outcome": operations,
-            "timestamp": timestamp
-        }
-        try:
 
-            collection.insert_one(processed_intent)
+        table = Users if context == "User" else NetworkApplications
 
-        except PyMongoError as e:
-            raise ProcessedIntentsDbException(
-                f"Error while putting processed_intent into otto_processed_intents_db: {e}")
+        target_id = table.query.with_entities(table.id).filter_by(username=username).scalar()
 
-        return processed_intent
+        if target_id is None:
+            raise Exception("Cannot find User")
+
+        processed_intent = ProcessedIntents(
+            agent_run=agent_run,
+            declared_by_type=context,
+            declared_by_id=target_id,
+            intent=intent,
+            timestamp=timestamp
+        )
+
+        authentication_db.session.add(processed_intent)
+
+        for i in range(len(called_tools)):
+            for tool_name, args in called_tools[i].items():
+                tool_call_id = CalledTools.query.with_entities(CalledTools.id).filter_by(name=tool_name).scalar()
+                processed_intent_tool_call = CalledTools(
+                    agent_run=agent_run,
+                    run_order=i+1,
+                    tool_call_id=tool_call_id,
+                    arguments=args
+                )
+
+                authentication_db.session.add(processed_intent_tool_call)
+
+        authentication_db.session.commit()
 
     def get_latest_activity(self) -> dict:
         collection = self.database['processed_intents']
