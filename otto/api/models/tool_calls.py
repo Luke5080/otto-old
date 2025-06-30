@@ -10,11 +10,12 @@ class ToolCalls(authentication_db.Model):
 
     outcomes = authentication_db.relationship('CalledTools', back_populates='tool_call', cascade='all, delete-orphan')
 
-    def populate_tool_calls(self):
+    def populate_tool_calls():
         tools = [tool.name for tool in create_tool_list()]
 
         for tool in tools:
-            tool_call =ToolCalls(name=tool)
+            tool_call = ToolCalls(name=tool)
+            print(tool_call)
             authentication_db.session.add(tool_call)
 
         authentication_db.session.commit()

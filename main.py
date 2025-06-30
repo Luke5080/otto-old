@@ -90,7 +90,7 @@ def main():
         logger.info("Started Dashboard: Visit http://localhost:8501")
 
     if args.shell:
-        otto_shell_intent_processor = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, "admin")
+        otto_shell_intent_processor = IntentProcessor(llm, create_tool_list(), intent_processor_prompt, context="User",username="admin")
         time.sleep(0.7) # ultimate groundbreaking fix to prevent logs overlapping shell when running both REST  APIs and GUI at the same time.
         OttoShell("ryu", controller_env, otto_shell_intent_processor, args.api, args.gui).run()
 
