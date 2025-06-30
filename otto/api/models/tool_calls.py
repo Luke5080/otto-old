@@ -15,7 +15,7 @@ class ToolCalls(authentication_db.Model):
 
         for tool in tools:
             tool_call = ToolCalls(name=tool)
-            print(tool_call)
+
             authentication_db.session.add(tool_call)
 
         authentication_db.session.commit()

@@ -8,8 +8,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables.config import RunnableConfig
 
 from otto.api.authentication_db import authentication_db
-from otto.api.models.network_applications import NetworkApplications
-from otto.api.models.users import Users
+from otto.api.models.entities import Entities
 from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
@@ -80,8 +79,6 @@ class OttoApi:
             to be used in subsequent API calls.
 
             Fields to be added in POST request body:
-                method: Context for the login API call. Should be either application or username. This is needed to know
-                which table to query against.
                 username: Username for the user or the registered application name
                 password: Password for the associated user/application.
 
@@ -95,17 +92,11 @@ class OttoApi:
                         'message': 'Empty request body. Please provide the following fields: method (either application or user), username, password'
                     }), 403
 
-            if 'method' not in login_request or login_request['method'] not in ['application', 'user']:
-                return jsonify(
-                    {'message': 'Method must be set to either application or user'}), 403
-
             if 'username' not in login_request or 'password' not in login_request:
                 return jsonify(
                     {'message': 'Username AND Password are required for network application authentication'}), 403
 
-            sqlalchemy_model = NetworkApplications if login_request['method'] == "application" else Users
-
-            found_user = sqlalchemy_model.query.filter_by(username=login_request['username']).first()
+            found_user = Entities.query.filter_by(username=login_request['username']).first()
 
             if found_user and found_user.check_password(login_request['password']):
                 token = jwt.encode({
@@ -152,6 +143,7 @@ class OttoApi:
                         resp += m.content + " "
                     else:
                         resp += m.content[0].get("text", "") + " "
+
             self.intent_processor_pool.return_intent_processor(designated_processor)
 
             if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':

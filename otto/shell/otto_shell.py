@@ -23,7 +23,7 @@ from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 from otto.utils import create_shell_banner
 from otto.api.authentication_db import authentication_db
-from otto.api.models.network_applications import NetworkApplications
+
 
 
 class OttoShell(cmd.Cmd):

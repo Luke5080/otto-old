@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 from otto.api.authentication_db import authentication_db
 from otto.api.models.called_tools import CalledTools
 from otto.api.models.processed_intents import ProcessedIntents
-from otto.api.models.network_applications import NetworkApplications
-from otto.api.models.users import Users
+from otto.api.models.entities import Entities
 
 from otto.exceptions import ProcessedIntentsDbException
 
@@ -12,12 +11,11 @@ from otto.exceptions import ProcessedIntentsDbException
 class ProcessedIntentsDbOperator:
 
     @staticmethod
-    def save_intent(agent_run: str, context: str, username: str, intent: str, timestamp: datetime,
+    def save_intent(agent_run: str, username: str, intent: str, timestamp: datetime,
                     called_tools: list[dict]) -> None:
         """
         Args:
             agent_run: ID of the agent run
-            context: Either User/Application
             username: Username of the user/app
             intent: The intent declared
             timestamp: datetime object
@@ -25,16 +23,13 @@ class ProcessedIntentsDbOperator:
 
         """
 
-        table = Users if context == "User" else NetworkApplications
-
-        target_id = table.query.with_entities(table.id).filter_by(username=username).scalar()
+        target_id = Entities.query.with_entities(Entities.id).filter_by(username=username).scalar()
 
         if target_id is None:
             raise Exception("Cannot find User")
 
         processed_intent = ProcessedIntents(
             agent_run=agent_run,
-            declared_by_type=context,
             declared_by_id=target_id,
             intent=intent,
             timestamp=timestamp

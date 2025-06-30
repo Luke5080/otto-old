@@ -31,7 +31,7 @@ class IntentProcessorPool:
         for i in range(len(self.models)):
             model = self._model_fetcher.get_model(self.models[i])
             for _ in range(model_distribution):
-                self.pool.append(IntentProcessor(model, create_tool_list(), username="admin", context="User",intent_processor_prompt))
+                self.pool.append(IntentProcessor(model, create_tool_list(), intent_processor_prompt, username="admin"))
 
     def get_intent_processor(self, model_required: str) -> IntentProcessor:
         """

@@ -19,7 +19,7 @@ from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedInt
 class IntentProcessor:
     def __init__(self, model: Union[BaseChatOpenAI, BaseChatModel],
                  tools: list, system_prompt: str,
-                 context: str, username: str):
+                 username: str):
 
         self.context = context
         self.system = system_prompt
@@ -136,17 +136,17 @@ class IntentProcessor:
         operations = list(map(get_tool_calls, agent_messages))
 
         self.processed_intents_db_conn.save_intent(agent_run=state['agent_run_id'],
-                                                   context=self.context,
                                                    username=self.username,
                                                    intent=state['messages'][0].content,
                                                    timestamp=datetime.now(),
                                                    called_tools=operations)
 
-        #self.processed_intents_db_conn.register_model_usage(self.model_name)
+        # self.processed_intents_db_conn.register_model_usage(self.model_name)
 
         self.network_state_broker.terminate_agent_run(state['agent_run_id'])
 
-        #return {'save_intent': processed_intent, 'operations': operations}
+        # return {'save_intent': processed_intent, 'operations': operations}
+
 
 def change_model(self, model):
     """Change the language model used by IntentProcessor"""
