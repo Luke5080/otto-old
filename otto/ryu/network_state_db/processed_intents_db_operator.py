@@ -1,18 +1,26 @@
 from datetime import datetime, timedelta
 
-from otto.api.authentication_db import authentication_db
+#from otto.api.authentication_db import authentication_db
 from otto.api.models.called_tools import CalledTools
 from otto.api.models.processed_intents import ProcessedIntents
 from otto.api.models.entities import Entities
-
+from otto.api.models.tool_calls import ToolCalls
+from otto.api.models.called_tools import CalledTools
+from otto.api.app import app
 from otto.exceptions import ProcessedIntentsDbException
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from otto.api.models.base import metadata
 
 class ProcessedIntentsDbOperator:
+    def __init__(self):
+         self._engine = create_engine("mysql+pymysql://root:root@127.0.0.1:3306/authentication_db")
+         self._session = Session(self._engine)
 
-    @staticmethod
-    def save_intent(agent_run: str, username: str, intent: str, timestamp: datetime,
-                    called_tools: list[dict]) -> None:
+
+    def save_intent(self, agent_run: str, username: str, intent: str, timestamp: datetime, called_tools: list[dict]) -> None:
         """
         Args:
             agent_run: ID of the agent run
@@ -23,7 +31,7 @@ class ProcessedIntentsDbOperator:
 
         """
 
-        target_id = Entities.query.with_entities(Entities.id).filter_by(username=username).scalar()
+        target_id = self._session.query(Entities.id).filter(Entities.username==username).scalar()
 
         if target_id is None:
             raise Exception("Cannot find User")
@@ -35,11 +43,12 @@ class ProcessedIntentsDbOperator:
             timestamp=timestamp
         )
 
-        authentication_db.session.add(processed_intent)
+        print(called_tools)
+        self._session.add(processed_intent)
 
         for i in range(len(called_tools)):
             for tool_name, args in called_tools[i].items():
-                tool_call_id = CalledTools.query.with_entities(CalledTools.id).filter_by(name=tool_name).scalar()
+                tool_call_id = self._session.query(ToolCalls.id).filter(ToolCalls.name==tool_name).scalar()
                 processed_intent_tool_call = CalledTools(
                     agent_run=agent_run,
                     run_order=i+1,
@@ -47,9 +56,9 @@ class ProcessedIntentsDbOperator:
                     arguments=args
                 )
 
-                authentication_db.session.add(processed_intent_tool_call)
+                self._session.add(processed_intent_tool_call)
 
-        authentication_db.session.commit()
+        self._session.commit()
 
     def get_latest_activity(self) -> dict:
         collection = self.database['processed_intents']

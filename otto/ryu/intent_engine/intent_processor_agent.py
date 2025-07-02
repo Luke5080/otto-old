@@ -21,7 +21,6 @@ class IntentProcessor:
                  tools: list, system_prompt: str,
                  username: str):
 
-        self.context = context
         self.system = system_prompt
         self.tool_list = tools
         self.username = username

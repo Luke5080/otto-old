@@ -1,21 +1,23 @@
-from otto.api.authentication_db import authentication_db
+from sqlalchemy.orm import relationship
 
+from sqlalchemy import (
+    Column, Integer, String, Enum, ForeignKey, Text, DateTime, JSON, UniqueConstraint
+)
+from otto.api.models.base import Base
 
-class CalledTools(authentication_db.Model):
+class CalledTools(Base):
     __tablename__ = "called_tools"
 
-    id = authentication_db.Column(authentication_db.Integer, nullable=False, primary_key=True)
-    agent_run = authentication_db.Column(authentication_db.String(255),
-                                         authentication_db.ForeignKey('processed_intents.agent_run'), nullable=False)
+    id = Column(Integer, nullable=False, primary_key=True)
+    agent_run = Column(String(255), ForeignKey('processed_intents.agent_run'), nullable=False)
 
-    run_order = authentication_db.Column(authentication_db.Integer, nullable=False)
-    tool_call_id = authentication_db.Column(authentication_db.Integer,
-                                            authentication_db.ForeignKey('tool_calls.id'), nullable=False)
-    arguments = authentication_db.Column(authentication_db.JSON, nullable=False)
+    run_order = Column(Integer, nullable=False)
+    tool_call_id = Column(Integer, ForeignKey('tool_calls.id'), nullable=False)
+    arguments = Column(JSON, nullable=False)
 
-    tool_call = authentication_db.relationship('ToolCalls', back_populates='outcomes')
-    intent = authentication_db.relationship('ProcessedIntents', back_populates='outcomes')
+    tool_call = relationship('ToolCalls', back_populates='outcomes')
+    intent = relationship('ProcessedIntents', back_populates='outcomes')
 
     __table_args__ = (
-        authentication_db.UniqueConstraint('agent_run', 'run_order', name='uq_agent_run_step_order'),
+        UniqueConstraint('agent_run', 'run_order', name='uq_agent_run_step_order'),
     )

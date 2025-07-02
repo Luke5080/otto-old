@@ -2,9 +2,9 @@ import multiprocessing
 
 from gunicorn.app.base import BaseApplication
 
-from otto.api.authentication_db import authentication_db
+from otto.api.flask_db import db
 from otto.otto_logger.logger_config import logger
-
+from otto.api.models.tool_calls import ToolCalls
 
 class GunicornManager(BaseApplication):
 
@@ -28,7 +28,8 @@ class GunicornManager(BaseApplication):
     def _before_fork(self, server):
         with self._app.app_context():
             try:
-                authentication_db.create_all()
+                db.create_all()
+                ToolCalls.populate_tool_calls()
                 logger.info("Otto Authentication Database Initialised")
             except Exception as e:
                 logger.warn(f"Could not initialise Authentication Database: {e}")

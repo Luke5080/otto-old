@@ -7,12 +7,12 @@ from flask import Flask, jsonify, request
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables.config import RunnableConfig
 
-from otto.api.authentication_db import authentication_db
+from otto.api.flask_db import db
 from otto.api.models.entities import Entities
 from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
-
+from otto.api.app import app
 
 class OttoApi:
     _app: Flask
@@ -25,8 +25,7 @@ class OttoApi:
         db_host = os.getenv("OTTO_DB_HOST")
         db_port = os.getenv("OTTO_DB_PORT")
 
-        print(f"mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/authentication_db")
-        self.app = Flask(__name__)
+        self.app = app
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self.app.config[
             'SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/authentication_db"
@@ -35,7 +34,7 @@ class OttoApi:
         self.app.config['SQLALCHEMY_POOL_PRE_PING'] = True
         self.app.config['SQLALCHEMY_POOL_TIMEOUT'] = 20
 
-        authentication_db.init_app(self.app)
+        db.init_app(self.app)
 
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()
 

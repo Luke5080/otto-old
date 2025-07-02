@@ -57,7 +57,6 @@ class NetworkStateBroker(Thread):
         """
 
         while not self.stop_event.is_set():
-            print("starting")
             for agent_run, given_network_state in self.agent_run_network_state_given.items():
                 print(f"Checking {agent_run} with state {given_network_state}")
                 current_network_state = self._nw_state_finder.get_network_state()
