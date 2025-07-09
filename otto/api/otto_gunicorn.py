@@ -30,9 +30,9 @@ class GunicornManager(BaseApplication):
             try:
                 db.create_all()
                 ToolCalls.populate_tool_calls()
-                logger.info("Otto Authentication Database Initialised")
+                logger.info("Otto Database Initialised")
             except Exception as e:
-                logger.warn(f"Could not initialise Authentication Database: {e}")
+                logger.warn(f"Could not initialise Database: {e}")
 
     def load(self):
         return self._app

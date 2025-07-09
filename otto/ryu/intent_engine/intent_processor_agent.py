@@ -106,7 +106,7 @@ class IntentProcessor:
 
         messages = state['messages']
 
-        # need to reformat this way so that ChatAnthropic doesn't complain..
+        # need to reformat this way so that ChatAnthropic doesn't complain
         messages = [SystemMessage(content=self.system)] + [
             SystemMessage(content=f"Current Network State:\n{state['network_state']}")] + messages
 
@@ -140,12 +140,9 @@ class IntentProcessor:
                                                    timestamp=datetime.now(),
                                                    called_tools=operations)
 
-        # self.processed_intents_db_conn.register_model_usage(self.model_name)
-
         self.network_state_broker.terminate_agent_run(state['agent_run_id'])
 
         # return {'save_intent': processed_intent, 'operations': operations}
-
 
 def change_model(self, model):
     """Change the language model used by IntentProcessor"""

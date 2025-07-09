@@ -12,7 +12,7 @@ from otto.api.models.entities import Entities
 from otto.otto_logger.logger_config import logger
 from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
-from otto.api.app import app
+
 
 class OttoApi:
     _app: Flask
@@ -24,11 +24,12 @@ class OttoApi:
         db_pwd = os.getenv("OTTO_DB_PWD")
         db_host = os.getenv("OTTO_DB_HOST")
         db_port = os.getenv("OTTO_DB_PORT")
+        db_name = os.getenv("OTTO_DB_NAME")
 
-        self.app = app
+        self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = os.urandom(16)
         self.app.config[
-            'SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/authentication_db"
+            'SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/{db_name}"
         self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         self.app.config['SQLALCHEMY_POOL_RECYCLE'] = 280
         self.app.config['SQLALCHEMY_POOL_PRE_PING'] = True
@@ -74,7 +75,7 @@ class OttoApi:
             """
             Login function to authenticate a user/network application before using northbound interface.
             The /login route is used by the streamlit dashboard to authenticate a user, as well as being used to
-            authenticate network applications which consume the different REST API endpoints. Returns a JWT token
+            authenticate users/ network apps which consume the different REST API endpoints. Returns a JWT token
             to be used in subsequent API calls.
 
             Fields to be added in POST request body:

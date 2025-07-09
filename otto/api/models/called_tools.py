@@ -1,9 +1,8 @@
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from sqlalchemy import (
-    Column, Integer, String, Enum, ForeignKey, Text, DateTime, JSON, UniqueConstraint
-)
 from otto.api.models.base import Base
+
 
 class CalledTools(Base):
     __tablename__ = "called_tools"

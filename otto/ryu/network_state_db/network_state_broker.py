@@ -1,5 +1,6 @@
 from threading import Thread, Event
 
+from otto.otto_logger.logger_config import logger
 from otto.ryu.network_state_db.network_state_finder import NetworkStateFinder
 
 
@@ -58,10 +59,10 @@ class NetworkStateBroker(Thread):
 
         while not self.stop_event.is_set():
             for agent_run, given_network_state in self.agent_run_network_state_given.items():
-                print(f"Checking {agent_run} with state {given_network_state}")
+                logger.info(f"Checking {agent_run} with state {given_network_state}")
                 current_network_state = self._nw_state_finder.get_network_state()
 
                 if current_network_state != given_network_state:
-                    print("Changes Found in Network State. Need to interrupt agent..")
+                    logger.warn("Changes Found in Network State. Need to interrupt agent..")
 
             self.stop_event.wait(10)
