@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import relationship
 
@@ -19,20 +19,21 @@ class ToolCalls(Base):
     def populate_tool_calls() -> None:
         """
         Method to populate the ToolCalls table. First obtains the currently available tool
-        calls, and checks whether they are already inputted into the table. If they are not,
-        they will be added.
+        calls, and checks whether they are already inputted into the tool_calls table. 
+        If they are not, they will be added.
         """
-
         engine = create_engine("mysql+pymysql://root:root@127.0.0.1:3306/authentication_db")
         session = Session(engine)
-
-        all_registered_tools = session.query(ToolCalls).all()
-
         available_tools = [tool.name for tool in create_tool_list()]
 
-        tools_to_add = [ToolCalls(name=registered_tool.name) for registered_tool in all_registered_tools if
-                        registered_tool.name not in available_tools]
+        registered_tools = session.execute(select(ToolCalls.name)).scalars().all()
 
-        session.add_all(tools_to_add)
+        tools_to_add = [ToolCalls(name=tool) for tool in available_tools if
+	                tool not in registered_tools]
+        if tools_to_add:
+           session.add_all(tools_to_add)
 
-        session.commit()
+           session.commit()
+
+        session.close()
+

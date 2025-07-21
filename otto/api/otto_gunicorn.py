@@ -5,7 +5,6 @@ from gunicorn.app.base import BaseApplication
 from otto.api.flask_db import db
 from otto.otto_logger.logger_config import logger
 from otto.api.models.tool_calls import ToolCalls
-
 class GunicornManager(BaseApplication):
 
     def __init__(self, flask_app):
@@ -46,7 +45,7 @@ class GunicornManager(BaseApplication):
         Start the Gunicorn Master as child process from the main process + run as a daemon
         """
         if self.process is None or not self.process.is_alive():
-            self.process = multiprocessing.Process(target=self.run, daemon=True)
+            self.process = multiprocessing.Process(target=self.run, daemon=False)
             self.process.start()
         else:
             logger.warn("Gunicorn is already running.")

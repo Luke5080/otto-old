@@ -12,7 +12,7 @@ from otto.ryu.intent_engine.intent_processor_agent_tools import \
     create_tool_list
 from otto.shell.otto_shell import OttoShell
 from otto.utils import check_default_credentials, check_api_keys
-
+from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
 def main():
     main_arg_parser = argparse.ArgumentParser(prog="Otto",
                                               description="Intent Based Northbound Interface for SDN controllers")

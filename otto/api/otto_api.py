@@ -96,7 +96,7 @@ class OttoApi:
                 return jsonify(
                     {'message': 'Username AND Password are required for network application authentication'}), 403
 
-            found_user = Entities.query.filter_by(username=login_request['username']).first()
+            found_user = db.session.query(Entities).filter_by(username=login_request['username']).first()
 
             if found_user and found_user.check_password(login_request['password']):
                 token = jwt.encode({
@@ -154,7 +154,6 @@ class OttoApi:
         @self.app.route('/latest-activity', methods=['GET'])
         @validate_token
         def get_latest_activity():
-            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_latest_activity()
 
             return jsonify({'message': response})
@@ -162,7 +161,6 @@ class OttoApi:
         @self.app.route('/weekly-activity', methods=['GET'])
         @validate_token
         def get_weekly_activity():
-            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_weekly_activity()
 
             return jsonify({'message': response})
@@ -170,7 +168,6 @@ class OttoApi:
         @self.app.route('/top-activity', methods=['GET'])
         @validate_token
         def get_top_activity():
-            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_top_activity()
 
             return jsonify({'message': response})
@@ -178,7 +175,6 @@ class OttoApi:
         @self.app.route('/model-usage', methods=['GET'])
         @validate_token
         def get_model_activity():
-            self._processed_intents_db_conn.connect()
             response = self._processed_intents_db_conn.get_model_usage()
 
             return jsonify({'message': response})

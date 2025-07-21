@@ -138,7 +138,8 @@ class IntentProcessor:
                                                    username=self.username,
                                                    intent=state['messages'][0].content,
                                                    timestamp=datetime.now(),
-                                                   called_tools=operations)
+                                                   called_tools=operations,
+                                                   model = self.model_name)
 
         self.network_state_broker.terminate_agent_run(state['agent_run_id'])
 

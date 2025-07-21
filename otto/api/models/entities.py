@@ -27,4 +27,4 @@ class Entities(Base):
         self.password = generate_password_hash(provided_password)
 
     def check_password(self, provided_password: str) -> bool:
-        return check_password_hash(self.password_hash, provided_password)
+        return check_password_hash(self.password, provided_password)

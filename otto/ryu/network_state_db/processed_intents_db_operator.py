@@ -15,7 +15,7 @@ class ProcessedIntentsDbOperator:
         self._session = Session(self._engine)
 
     def save_intent(self, agent_run: str, username: str, intent: str, timestamp: datetime,
-                    called_tools: list[dict]) -> None:
+                    called_tools: list[dict], model: str) -> None:
         """
         Args:
             agent_run: ID of the agent run
@@ -26,7 +26,7 @@ class ProcessedIntentsDbOperator:
 
         """
 
-        target_id = self._session.query(Entities.id).filter(Entities.username.is_(username)).scalar()
+        target_id = self._session.query(Entities.id).filter(Entities.username == username).scalar()
 
         if target_id is None:
             raise Exception("Cannot find User")
@@ -35,16 +35,15 @@ class ProcessedIntentsDbOperator:
             agent_run=agent_run,
             declared_by_id=target_id,
             intent=intent,
-            timestamp=timestamp
+            timestamp=timestamp,
+            model=model
         )
 
         self._session.add(processed_intent)
 
         for i in range(len(called_tools)):
             for tool_name, args in called_tools[i].items():
-                tool_call_id = (self._session.query(ToolCalls.id)
-                                .filter(ToolCalls.name.is_(tool_name))
-                                .scalar())
+                tool_call_id = self._session.query(ToolCalls.id).filter(ToolCalls.name == tool_name).scalar()
 
                 processed_intent_tool_call = CalledTools(
                     agent_run=agent_run,
