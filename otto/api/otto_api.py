@@ -9,15 +9,15 @@ from langchain_core.runnables.config import RunnableConfig
 
 from otto.api.flask_db import db
 from otto.api.models.entities import Entities
+from otto.intent_utils.agent_prompt import intent_processor_prompt
+from otto.intent_utils.model_factory import ModelFactory
 from otto.otto_logger.logger_config import logger
-from otto.ryu.intent_engine.intent_processor_pool import IntentProcessorPool
+from otto.ryu.intent_engine.intent_processor_agent import IntentProcessor
+from otto.ryu.intent_engine.intent_processor_agent_tools import create_tool_list
 from otto.ryu.network_state_db.processed_intents_db_operator import ProcessedIntentsDbOperator
 
 
 class OttoApi:
-    _app: Flask
-    _intent_processor_pool: IntentProcessorPool
-
     def __init__(self):
 
         db_user = os.getenv("OTTO_DB_USER")
@@ -38,8 +38,7 @@ class OttoApi:
         db.init_app(self.app)
 
         self._processed_intents_db_conn = ProcessedIntentsDbOperator()
-
-        self.intent_processor_pool = IntentProcessorPool()
+        self._model_factory = ModelFactory()
 
         self._create_routes()
 
@@ -125,11 +124,15 @@ class OttoApi:
                 return jsonify({'message': 'No intent found'}), 403
 
             if 'model' not in intent_request or not intent_request['model']:
-                designated_processor = self.intent_processor_pool.get_intent_processor('gpt-4o')
-            else:
-                designated_processor = self.intent_processor_pool.get_intent_processor(intent_request['model'])
+                return jsonify({'message': 'No model provided'}), 403
 
-            designated_processor.context, intent = token_data["app"], intent_request['intent']
+            else:
+                chosen_model = ModelFactory.get_model(intent_request['model'])
+
+                designated_processor = IntentProcessor(chosen_model, create_tool_list(), intent_processor_prompt,
+                                                       token_data['app'])
+
+            intent = intent_request['intent']
 
             messages, config = [HumanMessage(content=intent)], RunnableConfig(recursion_limit=300)
 
@@ -143,8 +146,6 @@ class OttoApi:
                         resp += m.content + " "
                     else:
                         resp += m.content[0].get("text", "") + " "
-
-            self.intent_processor_pool.return_intent_processor(designated_processor)
 
             if 'stream_type' in intent_request and 'stream_type' == 'AgentMessages':
                 return jsonify({'message': resp, 'operations': result['operations']})

@@ -54,14 +54,6 @@ def main():
 
     if args.api:
         otto_flask_api = OttoApi()
-        if args.api_pool_size:
-            otto_flask_api.intent_processor_pool.pool_size = int(args.api_pool_size)
-        if args.pool_models:
-            otto_flask_api.intent_processor_pool.models = args.pool_models
-        logger.info(
-            f"Creating IntentProcessor Pool with a size of {otto_flask_api.intent_processor_pool.pool_size} with models {otto_flask_api.intent_processor_pool.models}")
-
-        otto_flask_api.intent_processor_pool.create_pool()
 
         gm = GunicornManager(otto_flask_api.app)
 
