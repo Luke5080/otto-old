@@ -1,3 +1,3 @@
 # otto
-Initial repository for the Otto Project - Reworked version to be posted soon.
+Repository for Final Year Project Thesis titled "Leveraging LLMs to Head Towards Intent Based Network Controllers". 
 
